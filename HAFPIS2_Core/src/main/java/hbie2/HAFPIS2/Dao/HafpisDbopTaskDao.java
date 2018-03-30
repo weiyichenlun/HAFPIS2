@@ -1,0 +1,60 @@
+package hbie2.HAFPIS2.Dao;
+
+import hbie2.HAFPIS2.Entity.HafpisDbopTask;
+import hbie2.HAFPIS2.Utils.DateUtil;
+import hbie2.HAFPIS2.Utils.HibernateSessionFactoryUtil;
+import hbie2.HAFPIS2.Utils.StringUtil;
+import org.hibernate.Session;
+import org.hibernate.query.Query;
+
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
+import java.util.List;
+
+/**
+ * 描述：
+ * 作者：ZP
+ * 创建时间:2018/3/27
+ * 最后修改时间:2018/3/27
+ */
+public class HafpisDbopTaskDao {
+    private Session session = HibernateSessionFactoryUtil.getSession();
+
+    public List<HafpisDbopTask> getDbopTasks(int status, int datatype, int querynum) {
+        CriteriaBuilder builder = session.getCriteriaBuilder();
+        CriteriaQuery<HafpisDbopTask> criteria = builder.createQuery(HafpisDbopTask.class);
+        Root<HafpisDbopTask> dbopTaskRoot = criteria.from(HafpisDbopTask.class);
+        criteria.select(dbopTaskRoot)
+                .where(builder.and(builder.equal(dbopTaskRoot.get("status"), status),
+                        builder.equal(dbopTaskRoot.get("datatype"), datatype)))
+                .orderBy(builder.desc(dbopTaskRoot.get("priority")),
+                        builder.asc(dbopTaskRoot.get("begtime")));
+        return session.createQuery(criteria).setFirstResult(0).setMaxResults(querynum).getResultList();
+    }
+
+    public boolean update(String taskidd, int status) {
+        session.beginTransaction();
+        Query query = session.createQuery("update HafpisDbopTask dbop set dbop.status=" + StringUtil.addQuotes(status)
+                + ", dbop.endtime=\'" + DateUtil.getFormatDate(System.currentTimeMillis())
+                + "\' where dbop.taskidd=" + StringUtil.addQuotes(taskidd));
+        int num = query.executeUpdate();
+        session.getTransaction().commit();
+        return num == 1;
+    }
+
+    public void update(String taskidd, int status, String exptmsg) {
+        Query query = session.createQuery("update HafpisDbopTask dbop set dbop.status=" + status + ", dbop.endtime="
+                + StringUtil.addQuotes(DateUtil.getFormatDate(System.currentTimeMillis())) + ", dbop.exptmsg="
+                + StringUtil.addQuotes(exptmsg) + " where dbop.taskidd=" + StringUtil.addQuotes(taskidd));
+        query.executeUpdate();
+    }
+
+    public void updateStatus(int datatype) {
+        session.beginTransaction();
+        Query query = session.createQuery("update HafpisDbopTask dbop set dbop.status=\'3\' where dbop.status="
+                + StringUtil.addQuotes(4) + " and dbop.datatype=" + StringUtil.addQuotes(datatype));
+        query.executeUpdate();
+        session.getTransaction().commit();
+    }
+}

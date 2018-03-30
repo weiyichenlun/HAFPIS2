@@ -1,0 +1,76 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <!--c3p0配置-->
+        <!-- 数据库连接池的使用 -->
+        <!-- 选择使用C3P0连接池 -->
+        <property name="hibernate.connection.provider_class">org.hibernate.c3p0.internal.C3P0ConnectionProvider</property>
+        <!-- 连接池中最大连接数 -->
+        <property name="hibernate.c3p0.max_size">20</property>
+        <!-- 连接池中最小连接数 -->
+        <property name="hibernate.c3p0.min_size">5</property>
+        <!-- 设定数据库连接超时时间，以秒为单位。如果连接池中某个数据库连接处于空闲状态且超过timeout秒时，就会从连接池中移除 -->
+        <property name="hibernate.c3p0.timeout">120</property>
+        <property name="hibernate.c3p0.max_statements">100</property>
+        <!-- 每隔120秒检查连接池里的空闲连接 ，单位是秒-->
+        <property name="hibernate.c3p0.idle_test_period">120</property>
+        <!-- 当连接池里面的连接用完的时候，C3P0一下获取的新的连接数 -->
+        <property name="hibernate.c3p0.acquire_increment">1</property>
+
+        <!--sql server 配置-->
+        <property name="dialect">
+            org.hibernate.dialect.SQLServer2008Dialect</property>
+        <property name="connection.url">jdbc:sqlserver://172.16.1.30:1433;database=hafpis</property>
+        <property name="connection.driver_class">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
+        <property name="connection.username">hafpis</property>
+        <property name="connection.password">hafpis11</property>
+        <property name="default_schema">dbo</property>
+
+        <!--oracle 配置-->
+        <!--<property name="dialect">org.hibernate.dialect.Oracle10gDialect</property>-->
+        <!--<property name="connection.url">jdbc:oracle:thin:@172.16.0.193:1521:HAFPIS</property>-->
+        <!--<property name="connection.driver_class">oracle.jdbc.OracleDriver</property>-->
+        <!--<property name="connection.username">HAFPIS</property>-->
+        <!--<property name="connection.password">HAFPIS11</property>-->
+        <!--<property name="default_schema">HAFPIS</property>-->
+
+        <!--<property name="default_catalog">HAFPIS</property>-->
+        <property name="show_sql">true</property>
+
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisDbopTask"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisFaceCand"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisFpllCand"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisFpltCand"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisFptlCand"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisFpttCand"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisHlppSdemo"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisHplpSdemo"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisHtppSdemo"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisIrisCand"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisPmllCand"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisPmltCand"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisPmtlCand"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisPmttCand"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisSrchTask"/>
+
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisDbopTask.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisFaceCand.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisFpllCand.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisFpltCand.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisFptlCand.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisFpttCand.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisHlppSdemo.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisHplpSdemo.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisHtppSdemo.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisIrisCand.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisPmllCand.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisPmltCand.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisPmtlCand.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisPmttCand.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisSrchTask.hbm.xml"/>
+
+    </session-factory>
+</hibernate-configuration>

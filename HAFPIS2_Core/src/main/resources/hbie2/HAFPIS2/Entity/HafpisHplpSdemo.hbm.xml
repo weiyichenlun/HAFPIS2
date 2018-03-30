@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping auto-import="true">
+
+    <class name="hbie2.HAFPIS2.Entity.HafpisHplpSdemo" table="HAFPIS_HPLP_SDEMO" >
+        <id name="latentid">
+            <column name="LATENTID" sql-type="nvarchar(32)" length="32" not-null="true"/>
+        </id>
+        <property name="caseid">
+            <column name="CASEID" sql-type="nvarchar(32)" length="32" not-null="true"/>
+        </property>
+        <property name="dataver">
+            <column name="DATAVER" sql-type="numeric(10)" precision="10" />
+        </property>
+        <property name="dbid">
+            <column name="DBID" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="solveattr">
+            <column name="SOLVEATTR" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="enrolldate">
+            <column name="ENROLLDATE" sql-type="nvarchar(24)" length="24"/>
+        </property>
+    </class>
+</hibernate-mapping>

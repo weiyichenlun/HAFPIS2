@@ -1,0 +1,92 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="hbie2.HAFPIS2.Entity" auto-import="true">
+
+    <class name="HafpisFpttCand" table="HAFPIS_FPTT_CAND">
+        <composite-id name="keys" class="TTCompositeKeys">
+            <key-property name="taskidd">
+                <column name="TASKIDD" sql-type="nvarchar(32)" length="32" not-null="true"/>
+            </key-property>
+            <key-property name="candid">
+                <column name="CANDID" sql-type="nvarchar(32)" length="32" not-null="true"/>
+            </key-property>
+        </composite-id>
+        <property name="transno">
+            <column name="TRANSNO" sql-type="nvarchar(32)" length="32" not-null="true"/>
+        </property>
+        <property name="probeid">
+            <column name="PROBEID" sql-type="nvarchar(32)" length="32" not-null="true"/>
+        </property>
+        <property name="dbid">
+            <column name="DBID" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="candrank">
+            <column name="CANDRANK" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score">
+            <column name="SCORE" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score01">
+            <column name="SCORE01" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score02">
+            <column name="SCORE02" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score03">
+            <column name="SCORE03" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score04">
+            <column name="SCORE04" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score05">
+            <column name="SCORE05" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score06">
+            <column name="SCORE06" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score07">
+            <column name="SCORE07" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score08">
+            <column name="SCORE08" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score09">
+            <column name="SCORE09" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score10">
+            <column name="SCORE10" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score11">
+            <column name="SCORE11" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score12">
+            <column name="SCORE12" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score13">
+            <column name="SCORE13" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score14">
+            <column name="SCORE14" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score15">
+            <column name="SCORE15" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score16">
+            <column name="SCORE16" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score17">
+            <column name="SCORE17" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score18">
+            <column name="SCORE18" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score19">
+            <column name="SCORE19" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="score20">
+            <column name="SCORE20" sql-type="numeric(5)" precision="5"/>
+        </property>
+    </class>
+</hibernate-mapping>

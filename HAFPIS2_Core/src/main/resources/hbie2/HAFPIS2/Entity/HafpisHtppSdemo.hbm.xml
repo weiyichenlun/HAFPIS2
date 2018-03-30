@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping auto-import="true">
+
+    <class name="hbie2.HAFPIS2.Entity.HafpisHtppSdemo" table="HAFPIS_HTPP_SDEMO">
+        <id name="personid">
+            <column name="PERSONID" sql-type="nvarchar(32)" length="32" not-null="true"/>
+        </id>
+        <property name="dataver">
+            <column name="DATAVER" sql-type="numeric(10)" precision="10"/>
+        </property>
+        <property name="dbid">
+            <column name="DBID" sql-type="numeric(5)" precision="5" />
+        </property>
+        <property name="tpcarddup">
+            <column name="TPCARDDUP" sql-type="numeric(5)" precision="5"/>
+        </property>
+        <property name="enrolldate">
+            <column name="ENROLLDATE" sql-type="nvarchar(24)" length="24"/>
+        </property>
+        <property name="imgmask">
+            <column name="IMGMASK" sql-type="nvarchar(128)" length="128" not-null="true"/>
+        </property>
+        <property name="mainno">
+            <column name="MAINNO" sql-type="nvarchar(32)" length="32"/>
+        </property>
+    </class>
+</hibernate-mapping>
