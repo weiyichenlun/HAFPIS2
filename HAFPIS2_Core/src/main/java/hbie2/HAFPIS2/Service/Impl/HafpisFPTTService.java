@@ -1,5 +1,6 @@
 package hbie2.HAFPIS2.Service.Impl;
 
+import hbie2.Candidate;
 import hbie2.HAFPIS2.Dao.HafpisFpttCandDao;
 import hbie2.HAFPIS2.Dao.HafpisSrchTaskDao;
 import hbie2.HAFPIS2.Entity.HafpisFpttCand;
@@ -8,6 +9,7 @@ import hbie2.HAFPIS2.Entity.SrchDataBean;
 import hbie2.HAFPIS2.Service.AbstractService;
 import hbie2.HAFPIS2.Utils.CONSTANTS;
 import hbie2.HAFPIS2.Utils.CommonUtils;
+import hbie2.HAFPIS2.Utils.HbieUtils;
 import hbie2.TaskSearch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,7 +80,8 @@ public class HafpisFPTTService extends AbstractService implements Runnable {
                 TaskSearch taskSearch = new TaskSearch();
                 int numOfCand = srchTask.getNumofcand();
                 numOfCand = numOfCand > 0 ? (int) (numOfCand * 1.5) : CONSTANTS.MAXCANDS;
-                taskSearch.setId(srchTask.getTaskidd());
+                String taskidd = srchTask.getTaskidd();
+                taskSearch.setId(taskidd);
                 taskSearch.setType("TT");
                 taskSearch.setMaxCandidateNum(numOfCand);
                 taskSearch.setScoreThreshold(FPTT_Threshold);
@@ -88,10 +91,51 @@ public class HafpisFPTTService extends AbstractService implements Runnable {
                 String solveOrDupFilter = CommonUtils.getSolveOrDupFilter(CONSTANTS.DBOP_TPP, srchTask.getSolveordup());
                 String demoFilter = CommonUtils.getDemoFilter(srchTask.getDemofilter());
                 taskSearch.setFilter(CommonUtils.mergeFilters("flag=={0}", dbsFilter, solveOrDupFilter, demoFilter));
+                log.debug("Total filter is {}", taskSearch.getFilter());
 
+                String uid;
+                //rpmnt
+                if (srchDataBean.rpmntnum > 0) {
+                    taskSearch.setFeatures(srchDataBean.rpmnt);
+                    if (HbieUtils.getInstance().hbie_FP != null) {
+                        uid = HbieUtils.getInstance().hbie_FP.submitSearch(taskSearch);
+                        while (true) {
+                            TaskSearch task = HbieUtils.getInstance().hbie_FP.querySearch(uid);
+                            if (task == null) {
+                                log.error("Impossible. taskidd: {}", taskidd);
+                                srchTaskDao.update(taskidd, CONSTANTS.WAIT_STATUS);
+                                break;
+                            } else if (task.getStatus() == TaskSearch.Status.Error) {
+                                log.error("FPTT search error. taskidd: {}", taskidd);
+                                srchTaskDao.update(taskidd, CONSTANTS.ERROR_STATUS, task.getMsg());
+                                break;
+                            } else if (task.getStatus() != TaskSearch.Status.Done) {
+                                CommonUtils.sleep(100);
+                                continue;
+                            }
+                            List<Candidate> candidates = task.getCandidates();
+                            for (int i = 0; i < candidates.size(); i++) {
+                                HafpisFpttCand fpttCand = new HafpisFpttCand();
+                                Candidate cand = candidates.get(i);
+                                fpttCand.getKeys().setTaskidd(taskidd);
+                                fpttCand.getKeys().setCandid(cand.getId());
+                                fpttCand.setTransno(srchTask.getTransno());
+                                fpttCand.setProbeid(srchTask.getProbeid());
+                                fpttCand.setDbid((Integer) cand.getFields().get("dbid"));
+                                fpttCand.setScore(cand.getScore());
+
+                            }
+                        }
+                    } else {
+                        log.error("Get HBIE client error. Suspenging until HBIE is started..");
+                        log.info("waiting FPTT client...");
+                        srchTaskDao.update(srchTask.getTaskidd(), CONSTANTS.WAIT_STATUS);
+                        CommonUtils.sleep(interval);
+                    }
+                }
 
             } catch (Exception e) {
-                
+
             }
         }
     }

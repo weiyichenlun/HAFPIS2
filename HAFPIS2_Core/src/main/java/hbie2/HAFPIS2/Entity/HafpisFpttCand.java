@@ -34,6 +34,25 @@ public class HafpisFpttCand {
     private Integer score19;
     private Integer score20;
 
+    private int[] rpscores;
+    private int[] fpscores;
+
+    public int[] getRpscores() {
+        return rpscores;
+    }
+
+    public void setRpscores(int[] rpscores) {
+        this.rpscores = rpscores;
+    }
+
+    public int[] getFpscores() {
+        return fpscores;
+    }
+
+    public void setFpscores(int[] fpscores) {
+        this.fpscores = fpscores;
+    }
+
     public TTCompositeKeys getKeys() {
         return keys;
     }
