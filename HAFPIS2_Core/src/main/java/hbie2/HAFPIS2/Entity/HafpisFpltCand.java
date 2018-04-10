@@ -6,7 +6,7 @@ package hbie2.HAFPIS2.Entity;
  * 创建时间:2018/3/28
  * 最后修改时间:2018/3/28
  */
-public class HafpisFpltCand {
+public class HafpisFpltCand extends AbstractBean<HafpisFpltCand>{
     private OtherCompositeKeys keys;
     private String transno;
     private String probeid;

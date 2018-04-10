@@ -45,10 +45,10 @@
             <column name="SRCHDBSMASK" sql-type="nvarchar(32)" length="32"/>
         </property>
         <property name="demofilter">
-            <column name="DEMOFILTER" sql-type="image"/>
+            <column name="DEMOFILTER" sql-type="CLOB"/>
         </property>
         <property name="srchdata">
-            <column name="SRCHDATA" sql-type="image"/>
+            <column name="SRCHDATA" sql-type="BLOB"/>
         </property>
         <property name="begtime">
             <column name="BEGTIME" sql-type="nvarchar(24)" length="24"/>

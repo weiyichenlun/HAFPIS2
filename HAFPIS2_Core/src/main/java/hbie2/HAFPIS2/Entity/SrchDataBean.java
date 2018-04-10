@@ -28,7 +28,6 @@ public class SrchDataBean implements Externalizable {
     public byte[][] rpmnt;
     public byte[][] fpmnt;
     public byte[] latfpmnt;
-    public byte[] latfpmnt_auto;
     public byte[][] palmmnt;
     public byte[] latpalmmnt;
     public byte[][] facemnt;
@@ -57,7 +56,6 @@ public class SrchDataBean implements Externalizable {
         rpmnt = new byte[10][];
         fpmnt = new byte[10][];
         latfpmnt = new byte[0];
-        latfpmnt_auto = new byte[0];
         palmmnt = new byte[4][];
         latpalmmnt = new byte[0];
         facemnt = new byte[3][];
@@ -136,10 +134,6 @@ public class SrchDataBean implements Externalizable {
         if (latfpmnt != null && latfpmnt.length > 0) {
             out.write(latfpmnt);
         }
-        if (latfpmnt_auto != null && latfpmnt_auto.length > 0) {
-            out.write(latfpmnt_auto);
-        }
-
         if (latpalmmnt != null && latpalmmnt.length > 0) {
             out.write(latpalmmnt);
         }
@@ -194,7 +188,6 @@ public class SrchDataBean implements Externalizable {
             in.readFully(facemnt[i]);
         }
         in.readFully(latfpmnt);
-        in.readFully(latfpmnt_auto);
         in.readFully(latpalmmnt);
     }
 }

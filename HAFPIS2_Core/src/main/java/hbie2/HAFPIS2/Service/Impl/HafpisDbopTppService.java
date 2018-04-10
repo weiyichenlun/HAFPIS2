@@ -175,7 +175,7 @@ public class HafpisDbopTppService extends AbstractService implements Runnable {
             if (null == dbopTasks || dbopTasks.size() == 0) {
                 dbopTasks = dbopTaskDao.getDbopTasks(status, CONSTANTS.DBOP_TPP, querynum);
                 if (null == dbopTasks || dbopTasks.size() == 0) {
-                    CommonUtils.sleep(interval);
+                    CommonUtils.sleep(interval * 1000);
                 } else {
                     doWork(dbopTasks);
                 }

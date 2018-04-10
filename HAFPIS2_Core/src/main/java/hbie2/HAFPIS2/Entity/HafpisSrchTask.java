@@ -23,7 +23,7 @@ public class HafpisSrchTask {
     private Integer solveordup;
     private String srchposmask;
     private String srchdbsmask;
-    private byte[] demofilter;
+    private String demofilter;
     private byte[] srchdata;
     private String begtime;
     private String endtime;
@@ -142,11 +142,11 @@ public class HafpisSrchTask {
         this.srchdbsmask = srchdbsmask;
     }
 
-    public byte[] getDemofilter() {
+    public String getDemofilter() {
         return demofilter;
     }
 
-    public void setDemofilter(byte[] demofilter) {
+    public void setDemofilter(String demofilter) {
         this.demofilter = demofilter;
     }
 
@@ -203,7 +203,7 @@ public class HafpisSrchTask {
         if (solveordup != null ? !solveordup.equals(that.solveordup) : that.solveordup != null) return false;
         if (srchposmask != null ? !srchposmask.equals(that.srchposmask) : that.srchposmask != null) return false;
         if (srchdbsmask != null ? !srchdbsmask.equals(that.srchdbsmask) : that.srchdbsmask != null) return false;
-        if (!Arrays.equals(demofilter, that.demofilter)) return false;
+        if (demofilter != null ? !demofilter.equals(that.demofilter) : that.demofilter != null) return false;
         if (!Arrays.equals(srchdata, that.srchdata)) return false;
         if (begtime != null ? !begtime.equals(that.begtime) : that.begtime != null) return false;
         if (endtime != null ? !endtime.equals(that.endtime) : that.endtime != null) return false;
@@ -227,7 +227,7 @@ public class HafpisSrchTask {
         result = 31 * result + (solveordup != null ? solveordup.hashCode() : 0);
         result = 31 * result + (srchposmask != null ? srchposmask.hashCode() : 0);
         result = 31 * result + (srchdbsmask != null ? srchdbsmask.hashCode() : 0);
-        result = 31 * result + Arrays.hashCode(demofilter);
+        result = 31 * result + (demofilter != null ? demofilter.hashCode() : 0);
         result = 31 * result + Arrays.hashCode(srchdata);
         result = 31 * result + (begtime != null ? begtime.hashCode() : 0);
         result = 31 * result + (endtime != null ? endtime.hashCode() : 0);

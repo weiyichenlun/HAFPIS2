@@ -13,11 +13,8 @@ import org.hibernate.Session;
 public class HafpisHtppSdemoDao {
     private Session session;
 
-    public HafpisHtppSdemoDao() {
-         this.session = HibernateSessionFactoryUtil.getSession();
-    }
-
     public String getImgMask(String personid) {
+        session = HibernateSessionFactoryUtil.getSession();
         session.beginTransaction();
         HafpisHtppSdemo htppSdemo = session.get(HafpisHtppSdemo.class, personid);
         session.getTransaction().commit();
@@ -25,6 +22,7 @@ public class HafpisHtppSdemoDao {
     }
 
     public Integer getDbId(String personid) {
+        session = HibernateSessionFactoryUtil.getSession();
         session.beginTransaction();
         HafpisHtppSdemo htppSdemo = session.get(HafpisHtppSdemo.class, personid);
         session.getTransaction().commit();

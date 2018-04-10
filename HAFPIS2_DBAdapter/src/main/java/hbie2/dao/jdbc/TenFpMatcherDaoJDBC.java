@@ -147,6 +147,7 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
             for (int i = 2; i < info_cols.length; i++) {
                 sb.append(", ").append(info_cols[i].getName());
             }
+
             sb.append(" from ").append(this.jdbc_table).append(" where personid=?");
             try {
                 Map<String, Object> map = this.queryRunner.query(sb.toString(), new MapHandler(), pid);

@@ -1,5 +1,6 @@
 package hbie2.HAFPIS2.Utils;
 
+import hbie2.HAFPIS2.Entity.AbstractBean;
 import hbie2.HAFPIS2.Entity.HafpisSrchTask;
 import hbie2.HAFPIS2.Entity.SrchDataBean;
 import org.slf4j.Logger;
@@ -8,7 +9,9 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -31,7 +34,7 @@ public class CommonUtils {
         }
         for (int i = 0; i < srchDbMask.length(); i++) {
             if (srchDbMask.charAt(i) == '1') {
-                filter.append("dbId=={").append(i+1).append("}").append("||");
+                filter.append("dbid=={").append(i+1).append("}").append("||");
             }
         }
         if (filter.length() >= 2) {
@@ -40,9 +43,32 @@ public class CommonUtils {
         return filter.toString().trim().isEmpty() ? null : filter.toString();
     }
 
-    public static String getDemoFilter(byte[] demofilter) {
+    public static String getDemoFilter(String demofilter) {
+        if (demofilter == null || demofilter.length() == 0) return null;
+        demofilter = decode(demofilter);
+        return demofilter;
+    }
 
-        return null;
+    /**
+     * 解析字符串
+     * @param s 16进制字符串
+     * @return
+     */
+    public static String decode(String s) {
+        byte[] res = new byte[s.length() / 2];
+        for (int i = 0; i < res.length; i++) {
+            try {
+                res[i] = (byte) (0xff & Integer.parseInt(s.substring(i * 2, i * 2 + 2), 16));
+            } catch (NumberFormatException e) {
+                log.error(e.toString());
+            }
+        }
+        try {
+            s = new String(res, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            log.error(e.toString());
+        }
+        return s;
     }
 
     public static String getSolveOrDupFilter(int type, Integer solveordup) {
@@ -90,7 +116,7 @@ public class CommonUtils {
 
     public static void sleep(int interval) {
         try {
-            Thread.sleep(interval * 1000);
+            Thread.sleep(interval);
             log.debug("sleeping");
         } catch (InterruptedException e) {
             log.warn("Waiting Thread was interrupted: {}", e);
@@ -162,54 +188,79 @@ public class CommonUtils {
                     len -= 4;
                 }
                 switch (srchTask.getDatatype()) {
-                    case 1:
+                    case 1: //TP
                         for (int i = 0; i < temp.RpMntLen.length; i++) {
                             if (temp.RpMntLen[i] == 0) {
                                 temp.rpmnt[i] = null;
                             } else {
-                                byte[] tempFea = new byte[temp.RpMntLen[i]];
-                                dis.readFully(tempFea);
+                                byte[] tempFea = new byte[temp.RpMntLen[i] * 2];
+                                byte[] fea = new byte[3072];
+                                dis.readFully(fea);
+                                System.arraycopy(fea, 0, tempFea, 0, fea.length);
+                                System.arraycopy(fea, 0, tempFea, 3072, fea.length);
                                 temp.rpmnt[i] = tempFea;
                                 temp.rpmntnum++;
                                 len -= temp.RpMntLen[i];
+//
+//                                dis.readFully(tempFea);
+//                                temp.rpmnt[i] = tempFea;
+//                                temp.rpmntnum++;
+//                                len -= temp.RpMntLen[i];
                             }
                         }
                         for (int i = 0; i < temp.FpMntLen.length; i++) {
                             if (temp.FpMntLen[i] == 0) {
                                 temp.fpmnt[i] = null;
                             } else {
-                                byte[] tempFea = new byte[temp.FpMntLen[i]];
-                                dis.readFully(tempFea);
+                                byte[] tempFea = new byte[temp.FpMntLen[i] * 2];
+                                byte[] fea = new byte[3072];
+                                dis.readFully(fea);
+                                System.arraycopy(fea, 0, tempFea, 0, fea.length);
+                                System.arraycopy(fea, 0, tempFea, 3072, fea.length);
                                 temp.fpmnt[i] = tempFea;
                                 temp.fpmntnum++;
                                 len -= temp.FpMntLen[i];
+
+//                                dis.readFully(tempFea);
+//                                temp.fpmnt[i] = tempFea;
+//                                temp.fpmntnum++;
+//                                len -= temp.FpMntLen[i];
                             }
                         }
                         break;
-                    case 4:
+                    case 4: //LPP
                         if (temp.RpMntLen[0] == 0) {
                             temp.latfpmnt = null;
                         } else {
+                            //latfp mnt 3072 * 3 -- autp, enhance, mark
                             int len1 = temp.RpMntLen[0];
                             len -= len1;
                             if (len1 == 6304) {
                                 byte[] head = new byte[160];
                                 dis.readFully(head);
-                                byte[] tempFea1 = new byte[3072];
-                                byte[] tempFea2 = new byte[3072];
+                                byte[] tempFea1 = new byte[3072]; //manual
+                                byte[] tempFea2 = new byte[3072]; //auto
                                 dis.readFully(tempFea1);
                                 dis.readFully(tempFea2);
-                                temp.latfpmnt = tempFea1;
-                                temp.latfpmnt_auto = tempFea2;
+
+                                // just for temporary
+                                byte[] latfpmnt = new byte[3072 * 3];
+                                System.arraycopy(tempFea2, 0, latfpmnt, 0, 3072);
+                                System.arraycopy(tempFea2, 0, latfpmnt, 3072, 3072);
+                                System.arraycopy(tempFea1, 0, latfpmnt, 3072 * 2, 3072);
+                                temp.latfpmnt = latfpmnt;
                             } else if (len1 == 3072) {
                                 byte[] tempFea1 = new byte[3072];
                                 dis.readFully(tempFea1);
-                                temp.latfpmnt = tempFea1;
-                                temp.latfpmnt_auto = null;
+                                byte[] latfpmnt = new byte[3072 * 3];
+                                System.arraycopy(tempFea1, 0, latfpmnt, 0, 3072);
+                                System.arraycopy(tempFea1, 0, latfpmnt, 3072, 3072);
+                                System.arraycopy(tempFea1, 0, latfpmnt, 3072 * 2, 3072);
+                                temp.latfpmnt = latfpmnt;
                             }
                         }
                         break;
-                    case 2:
+                    case 2: //PP
                         for (int i = 0; i < 4; i++) {
                             int len1 = temp.PalmMntLen[CONSTANTS.srchOrder[i]];
                             if (len1 == 0) {
@@ -223,7 +274,7 @@ public class CommonUtils {
                             }
                         }
                         break;
-                    case 5:
+                    case 5: //PLP
                         if (temp.PalmMntLen[0] == 0) {
                             temp.latpalmmnt = null;
                         } else {
@@ -233,7 +284,7 @@ public class CommonUtils {
                             temp.latpalmmnt = tempFea;
                         }
                         break;
-                    case 6:
+                    case 6: //Face
                         for (int i = 0; i < 3; i++) {
                             int len1 = temp.FaceMntLen[i];
                             if (len1 == 0) {
@@ -247,7 +298,7 @@ public class CommonUtils {
                             }
                         }
                         break;
-                    case 7:
+                    case 7: //iris
                         for (int i = 0; i < 2; i++) {
                             int len1 = temp.IrisMntLen[i];
                             if (len1 == 0) {
@@ -271,4 +322,87 @@ public class CommonUtils {
     }
 
 
+    public static <T extends AbstractBean> List<T> getLimitedList(List<T> list, int numOfCand) {
+        List<T> result = new ArrayList<>();
+        if (list.size() > numOfCand) {
+            result.addAll(list.subList(0, numOfCand));
+        } else {
+            result.addAll(list);
+        }
+        return sort(result);
+    }
+
+    private static <T extends Comparable<? super T>> List<T> sort(List<T> result) {
+        Collections.sort(result);
+        return result;
+    }
+
+    public static String checkSrchPosMask(int srchDataType, String srchPosMask) {
+        switch (srchDataType) {
+            case CONSTANTS.SRCH_DATATYPE_TP:
+                if (srchPosMask == null || srchPosMask.length() == 0) {
+                    srchPosMask = "11111111111111111111";
+                } else if (srchPosMask.length() < 20) {
+                    char[] tempMask = "00000000000000000000".toCharArray();
+                    for (int i = 0; i < srchPosMask.length(); i++) {
+                        if (srchPosMask.charAt(i) == '1') {
+                            tempMask[i] = '1';
+                        }
+                    }
+                    srchPosMask = String.valueOf(tempMask);
+                } else {
+                    String temp = srchPosMask.substring(0, 20);
+                    if (temp.equals("00000000000000000000")) {
+                        srchPosMask = "11111111111111111111";
+                    }
+                }
+                return srchPosMask;
+            case CONSTANTS.SRCH_DATATYPE_PP:
+                if (srchPosMask == null || srchPosMask.length() == 0) {
+                    srchPosMask = "1000110001";
+                } else if (srchPosMask.length() <= 10) {
+                    char[] tempMask = "0000000000".toCharArray();
+                    for (int i = 0; i < 4; i++) {
+                        if (srchPosMask.charAt(CONSTANTS.srchOrder[i]) == '1') {
+                            tempMask[CONSTANTS.srchOrder[i]] = '1';
+                        }
+                    }
+                    srchPosMask = String.valueOf(tempMask);
+                } else {
+                    srchPosMask = srchPosMask.substring(0, 10);
+                    if (srchPosMask.equals("0000000000")) {
+                        srchPosMask = "1000110001";
+                    }
+                }
+                return srchPosMask;
+            default:
+                log.error("Wrong srchposmask type");
+                return "00000000000000000000";
+        }
+    }
+
+    public static int numberOf1(String s) {
+        int count = 0;
+        if (s == null || s.length() == 0) return count;
+        for (int i = 0; i < s.length(); i++) {
+            if (s.charAt(i) == '1') {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * 计算给定n中1的个数
+     * @param n
+     * @return
+     */
+    public static int numberOf1(int n) {
+        int count = 0;
+        while (n != 0) {
+            count++;
+            n = (n - 1) & n;
+        }
+        return count;
+    }
 }
