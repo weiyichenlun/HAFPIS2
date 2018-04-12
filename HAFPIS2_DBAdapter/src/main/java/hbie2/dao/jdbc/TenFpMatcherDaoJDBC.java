@@ -38,6 +38,10 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
     private String jdbc_usr;
     private String jdbc_pwd;
     private String jdbc_table;
+    private String ftp_host;
+    private int ftp_port;
+    private String ftp_usr;
+    private String ftp_pwd;
     private MatcherDAOMongoDB dao;
     private Connection conn = null;
     private QueryRunner queryRunner = null;
@@ -78,7 +82,6 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
                                 log.error("driver class: {} not found: ",this.jdbc_driver);
                                 System.exit(-1);
                             }
-
                             dataSource = new BasicDataSource();
                             dataSource.setDriverClassName(this.jdbc_driver);
                             dataSource.setUrl(this.jdbc_url);

@@ -18,6 +18,15 @@ public class HafpisDbopTask {
     private String begtime;
     private String endtime;
     private String exptmsg;
+    private String nistpath;
+
+    public String getNistpath() {
+        return nistpath;
+    }
+
+    public void setNistpath(String nistpath) {
+        this.nistpath = nistpath;
+    }
 
     public String getTaskidd() {
         return taskidd;

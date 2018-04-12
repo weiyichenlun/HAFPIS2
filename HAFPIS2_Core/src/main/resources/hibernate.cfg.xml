@@ -23,10 +23,8 @@
         <!--sql server 配置-->
         <property name="dialect">
             org.hibernate.dialect.SQLServer2008Dialect</property>
-        <property name="connection.url">jdbc:sqlserver://172.16.1.30:1433;database=hafpis</property>
-        <property name="connection.driver_class">com.microsoft.sqlserver.jdbc.SQLServerDriver</property>
-        <property name="connection.username">hafpis</property>
-        <property name="connection.password">hafpis11</property>
+        <property name="connection.url">jdbc:oracle:thin:@172.16.0.193:1521:HAFPIS</property>
+        <property name="connection.driver_class">oracle.jdbc.OracleDriver</property>
         <property name="default_schema">dbo</property>
 
         <!--oracle 配置-->
@@ -71,6 +69,10 @@
         <mapping resource="hbie2/HAFPIS2/Entity/HafpisPmtlCand.hbm.xml"/>
         <mapping resource="hbie2/HAFPIS2/Entity/HafpisPmttCand.hbm.xml"/>
         <mapping resource="hbie2/HAFPIS2/Entity/HafpisSrchTask.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisHlppKey.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisHplpKey.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisHtppKey.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisImgdbCaps.hbm.xml"/>
 
     </session-factory>
 </hibernate-configuration>

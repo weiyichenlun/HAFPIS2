@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+
+    <class name="hbie2.HAFPIS2.Entity.HafpisHlppKey" table="HAFPIS_HLPP_KEY" >
+        <id name="latentid">
+            <column name="LATENTID" sql-type="varchar2(32)" length="32"/>
+        </id>
+        <property name="devname">
+            <column name="DEVNAME" sql-type="varchar2(12)" length="12"/>
+        </property>
+        <property name="enrolldate">
+            <column name="ENROLLDATE" sql-type="varchar2(24)" length="24" not-null="true"/>
+        </property>
+    </class>
+</hibernate-mapping>

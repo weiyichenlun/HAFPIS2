@@ -67,6 +67,9 @@ public class CONSTANTS {
     public static final int FACE_1TOF_LIMIT = 10;
     public static final int IRIS_1TOF_LIMIT = 10;
 
+    public static final int DBOP_TPP_LIMIT = 20;
+    public static final int DBOP_LPP_LIMIT = 20;
+    public static final int DBOP_PLP_LIMIT = 20;
 
     public static final int[] srchOrder = new int[]{0, 4, 5, 9};
     public static final int[] feaOrder = new int[]{0, 2, 1, 3};

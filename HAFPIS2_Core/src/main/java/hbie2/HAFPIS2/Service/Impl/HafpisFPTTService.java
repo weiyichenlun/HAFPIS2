@@ -223,7 +223,7 @@ public class HafpisFPTTService extends AbstractService implements Runnable {
                             break;
                         }
                     } else {
-                        log.error("Get HBIE client null. Suspenging until HBIE is started..");
+                        log.error("Get HBIE client null. Suspending until HBIE is started..");
                         log.info("waiting FPTT client...");
                         srchTask.setStatus(CONSTANTS.WAIT_STATUS);
                         srchTaskDao.update(srchTask);
@@ -282,7 +282,7 @@ public class HafpisFPTTService extends AbstractService implements Runnable {
                 List<HafpisSrchTask> list = srchTaskDao.getSrchTasks(CONSTANTS.WAIT_STATUS, CONSTANTS.SRCH_DATATYPE_TP,
                         CONSTANTS.SRCH_TASKTYPE_TT, querynum);
                 if (null == list || list.size() == 0) {
-                    log.info("sleeping");
+                    log.debug("sleeping");
                     CommonUtils.sleep(interval * 1000);
                 } else {
                     for (HafpisSrchTask srchTask : list) {
@@ -307,7 +307,7 @@ public class HafpisFPTTService extends AbstractService implements Runnable {
             HafpisSrchTask srchTask = null;
             try {
                 srchTask = srchTaskQueue.take();
-                log.info("take one srchtask");
+                log.debug("take one srchtask");
                 if (srchTask.getSrchdata() == null || srchTask.getSrchdata().length == 0) {
                     log.error("SrchTask {} srchdata is null.");
                     srchTask.setStatus(CONSTANTS.ERROR_STATUS);

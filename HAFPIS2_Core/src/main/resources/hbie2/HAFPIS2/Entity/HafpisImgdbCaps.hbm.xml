@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+
+    <class name="hbie2.HAFPIS2.Entity.HafpisImgdbCaps" table="HAFPIS_IMGDB_CAPS">
+        <id name="devname">
+            <column name="DEVNAME" sql-type="varchar2(12)" length="12"/>
+        </id>
+        <property name="caporder">
+            <column name="CAPORDER" sql-type="number(5)" precision="5" not-null="true"/>
+        </property>
+        <property name="devtype">
+            <column name="DEVTYPE" sql-type="number(5)" precision="5" not-null="true"/>
+        </property>
+        <property name="devpath">
+            <column name="DEVPATH" sql-type="varchar2(256)" length="256" not-null="true"/>
+        </property>
+        <property name="devsize">
+            <column name="DEVSIZE" sql-type="number(5)" precision="5" not-null="true"/>
+        </property>
+        <property name="cursize">
+            <column name="CURSIZE" sql-type="number(5)" precision="5" not-null="true"/>
+        </property>
+    </class>
+</hibernate-mapping>

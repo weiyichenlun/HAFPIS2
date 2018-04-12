@@ -55,6 +55,10 @@
     </properties>
 
     <dependencies>
-
+        <dependency>
+            <groupId>hbie2</groupId>
+            <artifactId>HAFPIS_FTP</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 </project>
