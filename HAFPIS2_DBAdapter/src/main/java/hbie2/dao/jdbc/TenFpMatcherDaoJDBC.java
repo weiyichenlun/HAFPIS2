@@ -13,6 +13,7 @@ import hbie2.dao.mongodb.MatcherDAOMongoDB;
 import hbie2.nist.nistType.NistImg;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.ResultSetHandler;
 import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.MapHandler;
 import org.jetbrains.annotations.NotNull;
@@ -43,6 +44,7 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
     private String jdbc_usr;
     private String jdbc_pwd;
     private String jdbc_table;
+    private String task_table;
     private int ftp_enable;
     private String ftp_host;
     private int ftp_port;
@@ -102,6 +104,12 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
                                 log.error("connect to db error. ", e);
                                 System.exit(-1);
                             }
+//
+//                            this.task_table = prop.getProperty("matcher_task_table");
+//                            if (this.task_table == null) {
+//                                log.error("no matcher_task_table config");
+//                                System.exit(-1);
+//                            }
                             String ftp_enable_str = prop.getProperty("ftp_enable");
                             if (null == ftp_enable_str) {
                                 log.warn("Ftp_enable is not config.");
@@ -159,15 +167,19 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
     public Record fetchRecordToProcess(String magic) {
         while (true) {
             //find pengding record from HAFPIS_MATCHER_TASK
+            //对于平面指纹pid+$怎么处理
+//            String sql = "select * from (select t1.probeid, t1.status, t1.nistpath, t2.enrolldate from " +
+//                    this.task_table + " t1, " + this.jdbc_table + " t2 where t1.probeid=t2.personid and t1.status=? " +
+//                    "and t1.datatype=? order by t2.enrolldate) where rownum <= 1 for update";
             String sql = "select * from (select * from HAFPIS_MATCHER_TASK where status=? and datatype=? order by createtime) " +
                     "where rownum <=1 for update";
             try {
                 HafpisMatcherTask matcherTask = this.queryRunner.query(sql,
                         new BeanHandler<>(HafpisMatcherTask.class), Record.Status.Pending.name(), CONSTANTS.MATCHER_DATATYPE_TP);
-                String update_sql = "update HAFPIS_MATCHER_TASK set status=? where probeid=?";
+                String update_sql = "update HAFPIS_MATCHER_TASK set status=? where probeid=? and datatype=?";
                 String probeid = matcherTask.getKey().getProbeid();
                 boolean is_fp = probeid.endsWith("$");
-                this.queryRunner.update(update_sql, Record.Status.Processing.name(), probeid);
+                this.queryRunner.update(update_sql, Record.Status.Processing.name(), probeid, CONSTANTS.MATCHER_DATATYPE_TP);
                 Record record = new Record();
                 record.setId(probeid);
                 record.setCreateTime(new Date()); //TODO createtime should be comfirmes
@@ -319,13 +331,75 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
 
     @Nullable
     @Override
-    public Record fetchRecordToTrain(String s) {
-        return dao.fetchRecordToTrain(s);
+    public Record fetchRecordToTrain(String magic) {
+        String sql = "select * from (select * from HAFPIS_MATCHER_TASK where status=? and datatype=? order by " +
+                "create_time) where rownum <= 1";
+        try {
+            HafpisMatcherTask matcherTask = this.queryRunner.query(sql, new BeanHandler<>(HafpisMatcherTask.class),
+                    Record.Status.Processed.name(), CONSTANTS.MATCHER_DATATYPE_TP);
+            if (matcherTask != null) {
+                String pid = matcherTask.getKey().getProbeid();
+                boolean is_fp = pid.endsWith("$");
+                String name = is_fp ? pid.substring(0, pid.length() - 1) : pid;
+                Record record = new Record();
+                record.setId(matcherTask.getKey().getProbeid());
+                // get features
+                byte[][] features = new byte[10][];
+                for (int i = 0; i < 10; i++) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("select * from (select mntdata from ");
+                    sb.append(is_fp ? FPTABLES[i] : RPTABLES[i]);
+                    sb.append(" where personid=?");
+                    features[i] = this.queryRunner.query(sb.toString(), (ResultSetHandler<byte[]>) rs -> {
+                        if (rs.next()) {
+                            return rs.getBytes("mntdata");
+                        }
+                        return new byte[0];
+                    }, name);
+                }
+                record.setFeatures(features);
+                return record;
+            }
+            return null;
+        } catch (SQLException e) {
+            log.error("select record to train error.", e);
+            return null;
+        }
     }
 
     @Override
     public void finishRecordProcessed(Record record) {
-        dao.finishRecordProcessed(record);
+        if (record.getStatus().compareTo(Record.Status.Processed) == 0 ||
+                record.getStatus().compareTo(Record.Status.Trained) == 0) {
+            String pid = record.getId();
+            boolean is_fp = pid.endsWith("$");
+            byte[][] features = record.getFeatures();
+            String sql = "update HAFPIS_MATCHER_TASK set status=? where probeid=? and datatype=?";
+            try {
+                this.queryRunner.update(sql, Record.Status.Processed.name(), record.getId(), CONSTANTS.MATCHER_DATATYPE_TP);
+
+                // update features in oracle tables
+                for (int i = 0; i < features.length; i++) {
+                    String updateSql;
+                    if (is_fp) {
+                        pid = pid.substring(0, pid.length() - 1);
+                        updateSql = "merge into " + FPTABLES[i] + " using (select ? as pid, ? as mnt, ? as ver " +
+                                "from dual) t on (probeid=t.pid) when not matched then insert (probeid, dataver, " +
+                                "mntdata) values(t.pid, t.ver, t.mnt) when matched then update set mntdata=t.mnt";
+                    } else {
+                        updateSql = "merge into " + RPTABLES[i] + " using (select ? as pid, ? as mnt, ? as ver " +
+                                "from dual) t on (probeid=t.pid) when not matched then insert (probeid, dataver, " +
+                                "mntdata) values(t.pid, t.ver, t.mnt) when matched then update set mntdata=t.mnt";
+                    }
+                    log.debug("updateSql is {}", updateSql);
+                    this.queryRunner.update(updateSql, pid, 0, features[i]);
+                }
+            } catch (SQLException e) {
+                log.error("update record status error. {}", record.getId());
+            }
+        } else {
+            throw new IllegalStateException("Wrong record status when finish");
+        }
     }
 
     @Override
