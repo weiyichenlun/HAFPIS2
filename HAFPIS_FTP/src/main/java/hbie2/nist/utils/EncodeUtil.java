@@ -1,8 +1,5 @@
 package hbie2.nist.utils;
 
-import com.sun.image.codec.jpeg.JPEGCodec;
-import com.sun.image.codec.jpeg.JPEGEncodeParam;
-import com.sun.image.codec.jpeg.JPEGImageEncoder;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import hbie2.nist.format.CxbioLibrary;
@@ -15,7 +12,6 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -110,20 +106,28 @@ public class EncodeUtil {
         }
         return data;
     }
-    public static byte[] encodeImage(BufferedImage image)
-    {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        JPEGImageEncoder encoder = JPEGCodec.createJPEGEncoder(out);
-        JPEGEncodeParam param = encoder.getDefaultJPEGEncodeParam(image);
-        param.setQuality(1, false);
-        encoder.setJPEGEncodeParam(param);
-        try {
-            encoder.encode(image);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return out.toByteArray();
-    }
+
+//    public static byte[] encodeImage(BufferedImage image)
+//    {
+//        //out of date grammar
+//        ByteArrayOutputStream out = new ByteArrayOutputStream();
+//        JPEGImageEncoder encoder = JPEGCodec.createJPEGEncoder(out);
+//        JPEGEncodeParam param = encoder.getDefaultJPEGEncodeParam(image);
+//
+//        //Use ImageIO instead
+////        ImageIO.write(image, "", out);
+//
+//        param.setQuality(1, false);
+//        encoder.setJPEGEncodeParam(param);
+//        try {
+//            encoder.encode(image);
+//
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        return out.toByteArray();
+//    }
+
     public static  List<ImageFile> parseImginfoFile(File file){
         try {
             String path=file.getParent();

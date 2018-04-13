@@ -21,19 +21,19 @@
         <property name="hibernate.c3p0.acquire_increment">1</property>
 
         <!--sql server 配置-->
-        <property name="dialect">
-            org.hibernate.dialect.SQLServer2008Dialect</property>
-        <property name="connection.url">jdbc:oracle:thin:@172.16.0.193:1521:HAFPIS</property>
-        <property name="connection.driver_class">oracle.jdbc.OracleDriver</property>
-        <property name="default_schema">dbo</property>
-
-        <!--oracle 配置-->
-        <!--<property name="dialect">org.hibernate.dialect.Oracle10gDialect</property>-->
+        <!--<property name="dialect">-->
+            <!--org.hibernate.dialect.SQLServer2008Dialect</property>-->
         <!--<property name="connection.url">jdbc:oracle:thin:@172.16.0.193:1521:HAFPIS</property>-->
         <!--<property name="connection.driver_class">oracle.jdbc.OracleDriver</property>-->
-        <!--<property name="connection.username">HAFPIS</property>-->
-        <!--<property name="connection.password">HAFPIS11</property>-->
-        <!--<property name="default_schema">HAFPIS</property>-->
+        <!--<property name="default_schema">dbo</property>-->
+
+        <!--oracle 配置-->
+        <property name="dialect">org.hibernate.dialect.Oracle10gDialect</property>
+        <property name="connection.url">jdbc:oracle:thin:@172.16.0.193:1521:HAFPIS</property>
+        <property name="connection.driver_class">oracle.jdbc.OracleDriver</property>
+        <property name="connection.username">HAFPIS</property>
+        <property name="connection.password">HAFPIS11</property>
+        <property name="default_schema">HAFPIS</property>
 
         <!--<property name="default_catalog">HAFPIS</property>-->
         <property name="show_sql">true</property>
@@ -73,6 +73,7 @@
         <mapping resource="hbie2/HAFPIS2/Entity/HafpisHplpKey.hbm.xml"/>
         <mapping resource="hbie2/HAFPIS2/Entity/HafpisHtppKey.hbm.xml"/>
         <mapping resource="hbie2/HAFPIS2/Entity/HafpisImgdbCaps.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisMatcherTask.hbm.xml"/>
 
     </session-factory>
 </hibernate-configuration>

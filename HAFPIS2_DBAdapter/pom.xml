@@ -60,5 +60,17 @@
             <artifactId>HAFPIS_FTP</artifactId>
             <version>1.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>hbie2</groupId>
+            <artifactId>HAFPIS_Entity</artifactId>
+            <version>1.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>hbie2</groupId>
+            <artifactId>HAFPIS_Utils</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 </project>

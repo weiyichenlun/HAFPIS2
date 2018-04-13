@@ -21,6 +21,9 @@
     <module>HAFPIS2_DBAdapter</module>
     <module>HAFPIS2_core</module>
       <module>HAFPIS_FTP</module>
+      <module>HAFPIS_Entity</module>
+    <module>HAFPIS2_Dao</module>
+    <module>HAFPIS_Utils</module>
   </modules>
   <packaging>pom</packaging>
 

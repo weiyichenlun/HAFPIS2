@@ -1,5 +1,8 @@
 package hbie2.dao.jdbc;
 
+import hbie2.HAFPIS2.Entity.HafpisMatcherTask;
+import hbie2.HAFPIS2.Utils.CONSTANTS;
+import hbie2.HAFPIS2.Utils.CommonUtils;
 import hbie2.HbieConfig;
 import hbie2.InfoCol;
 import hbie2.Record;
@@ -7,8 +10,10 @@ import hbie2.TaskSearch;
 import hbie2.TaskVerify;
 import hbie2.dao.MatcherDAO;
 import hbie2.dao.mongodb.MatcherDAOMongoDB;
+import hbie2.nist.nistType.NistImg;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbutils.QueryRunner;
+import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.MapHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,6 +43,7 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
     private String jdbc_usr;
     private String jdbc_pwd;
     private String jdbc_table;
+    private int ftp_enable;
     private String ftp_host;
     private int ftp_port;
     private String ftp_usr;
@@ -96,6 +102,49 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
                                 log.error("connect to db error. ", e);
                                 System.exit(-1);
                             }
+                            String ftp_enable_str = prop.getProperty("ftp_enable");
+                            if (null == ftp_enable_str) {
+                                log.warn("Ftp_enable is not config.");
+                                log.warn("Use default value: 0");
+                                ftp_enable = 0;
+                            } else {
+                                try {
+                                    ftp_enable = Integer.parseInt(ftp_enable_str);
+                                } catch (NumberFormatException e) {
+                                    log.error("Ftp_enable config error. ");
+                                    ftp_enable = 0;
+                                }
+                            }
+
+                            if (ftp_enable == 1) {
+                                this.ftp_host = prop.getProperty("ftp_host");
+                                if (null == ftp_host) {
+                                    throw new IllegalArgumentException("no ftp_host config");
+                                } else {
+                                    String ftp_port_str = prop.getProperty("ftp_port");
+                                    if (ftp_port_str == null) {
+                                        log.warn("No ftp_port config. Use default port: 0");
+                                        this.ftp_port = 0;
+                                    } else {
+                                        try {
+                                            this.ftp_port = Integer.parseInt(ftp_port_str);
+                                        } catch (NumberFormatException e) {
+                                            log.error("ftp_port is not a valid number. Use default port: 0");
+                                            this.ftp_port = 0;
+                                        }
+                                        this.ftp_usr = prop.getProperty("ftp_usr");
+                                        if (null == ftp_usr) {
+                                            throw new IllegalArgumentException("no ftp_usr config");
+                                        } else {
+                                            this.ftp_pwd = prop.getProperty("ftp_pwd");
+                                            if (null == ftp_pwd) {
+                                                throw new IllegalArgumentException("no fpt_pwd config");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
                         }
                     }
                 }
@@ -107,8 +156,60 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
 
     @Nullable
     @Override
-    public Record fetchRecordToProcess(String s) {
-        return dao.fetchRecordToProcess(s);
+    public Record fetchRecordToProcess(String magic) {
+        while (true) {
+            //find pengding record from HAFPIS_MATCHER_TASK
+            String sql = "select * from (select * from HAFPIS_MATCHER_TASK where status=? and datatype=? order by createtime) " +
+                    "where rownum <=1 for update";
+            try {
+                HafpisMatcherTask matcherTask = this.queryRunner.query(sql,
+                        new BeanHandler<>(HafpisMatcherTask.class), Record.Status.Pending.name(), CONSTANTS.MATCHER_DATATYPE_TP);
+                String update_sql = "update HAFPIS_MATCHER_TASK set status=? where probeid=?";
+                String probeid = matcherTask.getKey().getProbeid();
+                boolean is_fp = probeid.endsWith("$");
+                this.queryRunner.update(update_sql, Record.Status.Processing.name(), probeid);
+                Record record = new Record();
+                record.setId(probeid);
+                record.setCreateTime(new Date()); //TODO createtime should be comfirmes
+                String path = matcherTask.getNistpath();
+                String filename = is_fp ? probeid.substring(0, probeid.length() - 1) : probeid;
+                log.debug("Path: {} filename: {}", path, filename);
+                Map<Integer, List<NistImg>> nistImgMap = Utils.initFtpAndLoadNist(this.ftp_host, this.ftp_port,
+                        this.ftp_usr, this.ftp_pwd, path, filename);
+                if (is_fp) {
+                    List<NistImg> fp_list = nistImgMap.get(16); //type 16: flat image
+                    if (fp_list == null || fp_list.size() == 0) {
+                        //TODO alse need to concern the four-fingers in type 14 list
+                        log.warn("probeid {}: no flat finger image in nist file", probeid);
+                    } else {
+                        byte[][] imgs = new byte[10][];
+                        fp_list.forEach(nistImg -> {
+                            imgs[nistImg.idc - 1] = nistImg.imgData;
+                        });
+                        record.setImages(imgs);
+                        return record;
+                    }
+                } else {
+                    List<NistImg> rp_list = nistImgMap.get(14); //type 14: roll image
+                    if (rp_list == null || rp_list.size() == 0) {
+                        //TODO alse need to concern the four-fingers in type 14 list
+                        log.warn("probeid {}: no roll finger image in nist file", probeid);
+                    } else {
+                        byte[][] imgs = new byte[10][];
+                        rp_list.forEach(nistImg -> {
+                            if (nistImg.idc >= 1 && nistImg.idc <= 10) {
+                                imgs[nistImg.idc - 1] = nistImg.imgData;
+                            }
+                        });
+                        record.setImages(imgs);
+                        return record;
+                    }
+                }
+            } catch (SQLException e) {
+                log.error("Select error from HAFPIS_MATCHER_TASK", e);
+                CommonUtils.sleep(100);
+            }
+        }
     }
 
     @Nullable
@@ -130,7 +231,6 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
 
     @NotNull
     @Override
-    //TODO 使用临时表加快查询速度
     public List<Record> selectRecords(Collection<String> ids) {
         InfoCol[] info_cols = dao.cfg.getInfoCols();
         List<Record> res = new ArrayList<>();

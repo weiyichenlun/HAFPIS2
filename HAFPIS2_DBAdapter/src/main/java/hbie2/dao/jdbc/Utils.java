@@ -1,5 +1,9 @@
 package hbie2.dao.jdbc;
 
+import hbie2.ftp.FTPClientException;
+import hbie2.ftp.FTPClientUtil;
+import hbie2.nist.NistDecoder;
+import hbie2.nist.nistType.NistImg;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -7,10 +11,15 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 描述：
@@ -124,5 +133,36 @@ public class Utils {
         return features;
     }
 
+    public static Map<Integer, List<NistImg>> initFtpAndLoadNist(String ftp_host, int ftp_port, String ftp_usr,
+                                                                 String ftp_pwd, String path, String name) {
+        Map<Integer, List<NistImg>> result = new HashMap<>();
+        FTPClientUtil ftpClient = new FTPClientUtil();
+        ftpClient.setHost(ftp_host);
+        ftpClient.setPort(ftp_port);
+        ftpClient.setUsername(ftp_usr);
+        ftpClient.setPassword(ftp_pwd);
+        String remoteFilePath = path + ".\\" + name + ".nist";
+        String localFilePath = ".\\" + name;
+        try (OutputStream outputStream = new FileOutputStream(new File(localFilePath));){
+            ftpClient.get(remoteFilePath, outputStream);
+            result = NistDecoder.decode(localFilePath);
+        } catch (IOException e) {
+            log.error("Can't create local temp file for probeid:{}", name);
+            return null;
+        } catch (FTPClientException e) {
+            log.error("Can't get nist file from ftp server for probeid: {}", name);
+            return null;
+        } finally {
+            File file = new File(localFilePath);
+            if (file.exists()) {
+                try {
+                    file.delete();
+                } catch (Exception e) {
+                    log.warn("Can't delete the temp file {}", localFilePath);
+                }
+            }
+        }
+        return result;
+    }
 
 }

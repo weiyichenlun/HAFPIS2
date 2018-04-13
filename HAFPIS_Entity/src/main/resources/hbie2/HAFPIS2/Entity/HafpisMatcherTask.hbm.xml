@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="hbie2.HAFPIS2.Entity" auto-import="true">
+
+    <class name="HafpisMatcherTask" table="HAFPIS_MATCHER_TASK">
+        <composite-id name="key" class="MatcherTaskKey">
+            <key-property name="probeid">
+                <column name="PROBEID" sql-type="varchar2(32)" length="32"/>
+            </key-property>
+            <key-property name="datatype">
+                <column name="DATATYPE" sql-type="number(*)" precision="2147483646" not-null="true"/>
+            </key-property>
+        </composite-id>
+        <property name="status">
+            <column name="STATUS" sql-type="varchar2(16)" length="16"/>
+        </property>
+        <property name="nistpath">
+            <column name="NISTPATH" sql-type="varchar2(128)" length="128"/>
+        </property>
+    </class>
+</hibernate-mapping>

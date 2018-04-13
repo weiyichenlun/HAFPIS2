@@ -159,7 +159,7 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
 
     @Override
     public boolean saveRecord(Record record) {
-        return dao.saveRecord(record);
+        return true;
     }
 
     @Override

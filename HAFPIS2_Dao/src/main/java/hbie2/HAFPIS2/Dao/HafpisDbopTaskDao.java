@@ -53,11 +53,19 @@ public class HafpisDbopTaskDao {
         HibernateSessionFactoryUtil.closeSession();
     }
 
-    public void update(String taskidd, int status, String exptmsg) {
-        Query query = session.createQuery("update HafpisDbopTask dbop set dbop.status=" + status + ", dbop.endtime="
-                + StringUtil.addQuotes(DateUtil.getFormatDate(System.currentTimeMillis())) + ", dbop.exptmsg="
-                + StringUtil.addQuotes(exptmsg) + " where dbop.taskidd=" + StringUtil.addQuotes(taskidd));
-        query.executeUpdate();
+    public boolean update(String taskidd, int status, String exptmsg) {
+        Session session = HibernateSessionFactoryUtil.getSession();
+        session.beginTransaction();
+        String hql = "update HafpisDbopTask dbop set dbop.status=:status" + (exptmsg==null?" ":", dbop.exptmsg=:exptmsg") + " where dbop.taskidd=:taskidd";
+        Query query = session.createQuery(hql).setParameter("status", status);
+        if (exptmsg != null) {
+            query.setParameter("exptmsg", exptmsg);
+        }
+        query.setParameter("taskidd", taskidd);
+        int updateCnt = query.executeUpdate();
+        session.getTransaction().commit();
+        HibernateSessionFactoryUtil.closeSession();
+        return updateCnt == 1;
     }
 
     public void updateStatus(int datatype) {
