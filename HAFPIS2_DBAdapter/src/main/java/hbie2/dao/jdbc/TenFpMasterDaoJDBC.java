@@ -1,6 +1,7 @@
 package hbie2.dao.jdbc;
 
 import hbie2.DataCheckStatus;
+import hbie2.HAFPIS2.Utils.CONSTANTS;
 import hbie2.HbieConfig;
 import hbie2.MasterInfo;
 import hbie2.MatcherInfo;
@@ -14,6 +15,7 @@ import kotlin.jvm.functions.Function2;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.ArrayListHandler;
+import org.apache.commons.dbutils.handlers.MapHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -21,9 +23,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -210,22 +215,112 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
     @Nullable
     @Override
     public String fetchRecordToPublish(String magic) {
-        return dao.fetchRecordToPublish(magic);
+        PreparedStatement ps = null;
+        try (Connection conn = this.queryRunner.getDataSource().getConnection()){
+            conn.setAutoCommit(false);
+            String sql = "select probeid from (select probeid from HAFPIS_MATCHER_TASK where status=? and datatype=? " +
+                    "order by probeid asc, createtime asc) where rownum <= 1";
+            ps = conn.prepareStatement(sql);
+            ps.setString(1, Record.Status.Trained.name());
+            ps.setInt(2, CONSTANTS.MATCHER_DATATYPE_TP);
+            ResultSet rs = ps.executeQuery();
+            MapHandler mapHandler = new MapHandler();
+            Map<String, Object> map = mapHandler.handle(rs);
+
+            if (map == null || map.size() == 0) {
+                return null;
+            }
+
+            String id = (String) map.get("probeid");
+            String updateSql = "update HAFPIS_MATCHER_TASK set status=? where probeid=? and datatype=? and status=?";
+            ps = conn.prepareStatement(updateSql);
+            ps.setString(1, Record.Status.Publishing.name());
+            ps.setString(2, id);
+            ps.setInt(3, CONSTANTS.MATCHER_DATATYPE_TP);
+            ps.setString(4, Record.Status.Trained.name());
+            ps.executeUpdate();
+            log.debug("fetch record to publish {}", id);
+
+            conn.commit();
+            return id;
+        } catch (SQLException e) {
+            log.error("fetch recoed to public error. magic: {}", magic, e);
+            try {
+                conn.rollback();
+            } catch (SQLException e1) {
+                log.error("rollback error ", e);
+            }
+            return null;
+        } finally {
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) {
+                    log.error("ps close error ", e);
+                }
+            }
+        }
     }
 
     @Override
     public void finishRecord(String id) {
-        dao.finishRecord(id);
+        String sql = "update HAFPIS_MATCHER_TASK set status=? where probeid=? and datatype=? and status=?";
+        try {
+            this.queryRunner.update(sql, Record.Status.Done.name(), id, CONSTANTS.MATCHER_DATATYPE_TP,
+                    Record.Status.Publishing.name());
+            log.debug("finish record {}", id);
+        } catch (SQLException e) {
+            log.error("finish record error. {}", id, e);
+        }
     }
 
     @Override
-    public void resetRecordProcessing(String id) {
-        dao.resetRecordProcessing(id);
+    public void resetRecordProcessing(String magic) {
+        PreparedStatement ps = null;
+        try (Connection conn = this.queryRunner.getDataSource().getConnection()) {
+            conn.setAutoCommit(false);
+            String processSql = "update HAFPIS_MATCHER_TASK set status=? where status=? and datatype=?";
+            ps = conn.prepareStatement(processSql);
+            ps.setString(1, Record.Status.Pending.name());
+            ps.setString(2, Record.Status.Processing.name());
+            ps.setInt(3, CONSTANTS.MATCHER_DATATYPE_TP);
+            ps.executeUpdate();
+
+            String trainSql = "update HAFPIS_MATCHER_TASK set status=? where status=? and datatype=?";
+            ps = conn.prepareStatement(trainSql);
+            ps.setString(1, Record.Status.Processed.name());
+            ps.setString(2, Record.Status.Training.name());
+            ps.setInt(3, CONSTANTS.MATCHER_DATATYPE_TP);
+            ps.executeUpdate();
+
+            conn.commit();
+        } catch (SQLException e) {
+            log.error("reset record processing error. magic {}", magic, e);
+            try {
+                conn.rollback();
+            } catch (SQLException e1) {
+                log.error("error. ", e);
+            }
+        } finally {
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) {
+                    log.error("close preparestatement error", e);
+                }
+            }
+        }
     }
 
     @Override
-    public void resetRecordPublishing(String id) {
-        dao.resetRecordPublishing(id);
+    public void resetRecordPublishing(String magic) {
+        String publicshSql = "update HAFPIS_MATCHER_TASK set status=? where status=? and datatype=?";
+        try {
+            this.queryRunner.update(publicshSql, Record.Status.Trained.name(), Record.Status.Processing.name(),
+                    CONSTANTS.MATCHER_DATATYPE_TP);
+        } catch (SQLException e) {
+            log.error("reset record publishing error. magic {}", magic, e);
+        }
     }
 
     @Nullable

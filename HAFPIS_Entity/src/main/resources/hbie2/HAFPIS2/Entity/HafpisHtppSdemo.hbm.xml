@@ -26,5 +26,8 @@
         <property name="mainno">
             <column name="MAINNO" sql-type="nvarchar(32)" length="32"/>
         </property>
+        <property name="updatedate">
+            <column name="UPDATEDATE" sql-type="varchar2(24)" length="24"/>
+        </property>
     </class>
 </hibernate-mapping>

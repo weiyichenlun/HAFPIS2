@@ -18,6 +18,7 @@ public class HafpisHtppSdemoDao {
         session.beginTransaction();
         HafpisHtppSdemo htppSdemo = session.get(HafpisHtppSdemo.class, personid);
         session.getTransaction().commit();
+        HibernateSessionFactoryUtil.closeSession();
         return htppSdemo == null ? null : htppSdemo.getImgmask();
     }
 
@@ -26,8 +27,17 @@ public class HafpisHtppSdemoDao {
         session.beginTransaction();
         HafpisHtppSdemo htppSdemo = session.get(HafpisHtppSdemo.class, personid);
         session.getTransaction().commit();
+        HibernateSessionFactoryUtil.closeSession();
         return htppSdemo == null ? 0 : htppSdemo.getDbid();
     }
 
+    public HafpisHtppSdemo select(String personid) {
+        Session session = HibernateSessionFactoryUtil.getSession();
+        session.beginTransaction();
+        HafpisHtppSdemo htppSdemo = session.get(HafpisHtppSdemo.class, personid);
+        session.getTransaction().commit();
+        HibernateSessionFactoryUtil.closeSession();
+        return htppSdemo;
+    }
 
 }

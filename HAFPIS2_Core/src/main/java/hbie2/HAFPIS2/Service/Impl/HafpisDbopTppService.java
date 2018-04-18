@@ -7,6 +7,7 @@ import hbie2.HAFPIS2.Dao.HafpisImgdbCapsDao;
 import hbie2.HAFPIS2.Dao.HafpisMatcherTaskDao;
 import hbie2.HAFPIS2.Entity.HafpisDbopTask;
 import hbie2.HAFPIS2.Entity.HafpisHtppKey;
+import hbie2.HAFPIS2.Entity.HafpisHtppSdemo;
 import hbie2.HAFPIS2.Entity.HafpisImgdbCaps;
 import hbie2.HAFPIS2.Entity.HafpisMatcherTask;
 import hbie2.HAFPIS2.Entity.MatcherTaskKey;
@@ -89,134 +90,138 @@ public class HafpisDbopTppService extends AbstractService implements Runnable {
     @Override
     public <T> void doWork(List<T> list) {
         HafpisDbopTask dbopTask = (HafpisDbopTask) list.get(0);
-        try {
-            int dbopTaskType = dbopTask.getTasktype();
-            String id = dbopTask.getProbeid();
-            String imgmask = htppSdemoDao.getImgMask(id);
-            switch (dbopTaskType) {
-                case 6: //delete:
-                    if (HbieUtils.getInstance().hbie_FP != null) {
-                        HbieUtils.getInstance().hbie_FP.deleteRecord(id);
-                        HbieUtils.getInstance().hbie_FP.deleteRecord(id + "$");
-                    }
-                    if (HbieUtils.getInstance().hbie_PP != null) {
-                        HbieUtils.getInstance().hbie_PP.deleteRecord(id);
-                    }
-                    if (HbieUtils.getInstance().hbie_FACE != null) {
-                        HbieUtils.getInstance().hbie_FACE.deleteRecord(id);
-                    }
-                    if (HbieUtils.getInstance().hbie_IRIS != null) {
-                        HbieUtils.getInstance().hbie_IRIS.deleteRecord(id);
-                    }
-                    dbopTask.setStatus(CONSTANTS.FINISH_STATUS);
-                    break;
-                case 5: //insert
-                    String path = dbopTask.getNistpath();
+        int dbopTaskType = dbopTask.getTasktype();
+        String id = dbopTask.getProbeid();
+        HafpisHtppSdemo htppSdemo = htppSdemoDao.select(id);
+        String imgmask = htppSdemo.getImgmask();
+        String createtime = htppSdemo.getUpdatedate();
+        switch (dbopTaskType) {
+            case 6: //delete:
+                if (HbieUtils.getInstance().hbie_FP != null) {
+                    HbieUtils.getInstance().hbie_FP.deleteRecord(id);
+                    HbieUtils.getInstance().hbie_FP.deleteRecord(id + "$");
+                }
+                if (HbieUtils.getInstance().hbie_PP != null) {
+                    HbieUtils.getInstance().hbie_PP.deleteRecord(id);
+                }
+                if (HbieUtils.getInstance().hbie_FACE != null) {
+                    HbieUtils.getInstance().hbie_FACE.deleteRecord(id);
+                }
+                if (HbieUtils.getInstance().hbie_IRIS != null) {
+                    HbieUtils.getInstance().hbie_IRIS.deleteRecord(id);
+                }
+                dbopTask.setStatus(CONSTANTS.FINISH_STATUS);
+                break;
+            case 5: //insert
+//                String path = dbopTask.getNistpath();
+                String path = ".";
+                if (path == null) {
+                    path = findPathByDb(dbopTask.getProbeid());
                     if (path == null) {
-                        path = findPathByDb(dbopTask.getProbeid());
-                        if (path == null) {
-                            log.error("Can't find nist path for taskidd: {}", dbopTask.getTaskidd());
-                            dbopTask.setStatus(CONSTANTS.ERROR_STATUS);
-                            dbopTask.setExptmsg("Can not find nist path");
-                            break;
-                        }
+                        log.error("Can't find nist path for taskidd: {}", dbopTask.getTaskidd());
+                        dbopTask.setStatus(CONSTANTS.ERROR_STATUS);
+                        dbopTask.setExptmsg("Can not find nist path");
+                        break;
                     }
+                }
 
+                if (!imgmask.substring(0, 10).equals("0000000000")) {
+                    HafpisMatcherTask matcherTask = new HafpisMatcherTask();
+                    MatcherTaskKey key = new MatcherTaskKey();
+                    key.setProbeid(id);
+                    key.setDatatype(CONSTANTS.MATCHER_DATATYPE_TP);
+                    matcherTask.setKey(key);
+                    matcherTask.setStatus(Record.Status.Pending.name());
+                    matcherTask.setNistpath(path);;
+                    matcherTask.setCreatetime(createtime);
+                    matcherTaskDao.insert(matcherTask);
+                    log.debug("Insert into HAFPIS_MATCHER_TASK success. Probeid: {}", id);
+                }
+                if (!imgmask.substring(10, 20).equals("0000000000")) {
+                    HafpisMatcherTask matcherTask = new HafpisMatcherTask();
+                    MatcherTaskKey key = new MatcherTaskKey();
+                    key.setProbeid(id + "$");
+                    key.setDatatype(CONSTANTS.MATCHER_DATATYPE_TP);
+                    matcherTask.setKey(key);
+                    matcherTask.setStatus(Record.Status.Pending.name());
+                    matcherTask.setNistpath(path);
+                    matcherTask.setCreatetime(createtime);
+                    matcherTaskDao.insert(matcherTask);
+                    log.debug("Insert into HAFPIS_MATCHER_TASK success. Probeid: {}", id + "$");
+                }
+                log.debug("Insert into HAFPIS_MATCHER_TASK success. Probeid: {}", dbopTask.getProbeid());
+                dbopTask.setStatus(CONSTANTS.FINISH_STATUS);
+                break;
+            case 7: //update
+                HafpisMatcherTask task = matcherTaskDao.select(id, CONSTANTS.MATCHER_DATATYPE_TP);
+                String nistPath = dbopTask.getNistpath();
+                if (nistPath == null) {
+                    nistPath = findPathByDb(id);
+                    if (nistPath == null) {
+                        log.error("Can't find nist path for taskidd: {}", dbopTask.getTaskidd());
+                        dbopTask.setStatus(CONSTANTS.ERROR_STATUS);
+                        dbopTask.setExptmsg("Can not find nist path");
+                        break;
+                    }
+                }
+                // rp matcher task
+                if (task == null) {
+                    log.debug("Get MatcherTask null for probeid: {}", id);
                     if (!imgmask.substring(0, 10).equals("0000000000")) {
-                        HafpisMatcherTask matcherTask = new HafpisMatcherTask();
+                        task = new HafpisMatcherTask();
                         MatcherTaskKey key = new MatcherTaskKey();
                         key.setProbeid(id);
                         key.setDatatype(CONSTANTS.MATCHER_DATATYPE_TP);
-                        matcherTask.setKey(key);
-                        matcherTask.setStatus(Record.Status.Pending.name());
-                        matcherTask.setNistpath(path);
-                        matcherTaskDao.insert(matcherTask);
-                        log.debug("Insert into HAFPIS_MATCHER_TASK success. Probeid: {}", id);
+                        task.setKey(key);
+                        task.setStatus(Record.Status.Pending.name());
+                        task.setNistpath(nistPath);
+                        task.setCreatetime(createtime);
+                        matcherTaskDao.insert(task);
+                        log.debug("Insert Task {} success", id);
                     }
+                } else {
+                    log.debug("Get MatcherTask {} ", id);
+                    task.getKey().setDatatype(CONSTANTS.MATCHER_DATATYPE_TP);
+                    task.setStatus(Record.Status.Pending.name());
+                    task.setNistpath(nistPath);
+                    task.setCreatetime(createtime);
+                    matcherTaskDao.update(task);
+                    log.debug("Update Task {} success", id);
+                }
+
+                HafpisMatcherTask task1 = matcherTaskDao.select(id + "$", CONSTANTS.MATCHER_DATATYPE_TP);
+                if (task1 == null) {
+                    log.debug("Get MatcherTask null for probeid: {}", id + "$");
+
                     if (!imgmask.substring(10, 20).equals("0000000000")) {
-                        HafpisMatcherTask matcherTask = new HafpisMatcherTask();
+                        task1 = new HafpisMatcherTask();
                         MatcherTaskKey key = new MatcherTaskKey();
                         key.setProbeid(id + "$");
                         key.setDatatype(CONSTANTS.MATCHER_DATATYPE_TP);
-                        matcherTask.setKey(key);
-                        matcherTask.setStatus(Record.Status.Pending.name());
-                        matcherTask.setNistpath(path);
-                        matcherTaskDao.insert(matcherTask);
-                        log.debug("Insert into HAFPIS_MATCHER_TASK success. Probeid: {}", id + "$");
-                    }
-                    log.debug("Insert into HAFPIS_MATCHER_TASK success. Probeid: {}", dbopTask.getProbeid());
-                    dbopTask.setStatus(CONSTANTS.FINISH_STATUS);
-                    break;
-                case 7: //update
-                    HafpisMatcherTask task = matcherTaskDao.select(id);
-                    String nistPath = dbopTask.getNistpath();
-                    if (nistPath == null) {
-                        nistPath = findPathByDb(id);
-                        if (nistPath == null) {
-                            log.error("Can't find nist path for taskidd: {}", dbopTask.getTaskidd());
-                            dbopTask.setStatus(CONSTANTS.ERROR_STATUS);
-                            dbopTask.setExptmsg("Can not find nist path");
-                            break;
-                        }
-                    }
-                    // rp matcher task
-                    if (task == null) {
-                        log.debug("Get MatcherTask null for probeid: {}", id);
-                        if (!imgmask.substring(0, 10).equals("0000000000")) {
-                            task = new HafpisMatcherTask();
-                            MatcherTaskKey key = new MatcherTaskKey();
-                            key.setProbeid(id);
-                            key.setDatatype(CONSTANTS.MATCHER_DATATYPE_TP);
-                            task.setKey(key);
-                            task.setStatus(Record.Status.Pending.name());
-                            task.setNistpath(nistPath);
-                            matcherTaskDao.insert(task);
-                            log.debug("Insert Task {} success", id);
-                        }
-                    } else {
-                        log.debug("Get MatcherTask {} ", id);
-                        task.getKey().setDatatype(CONSTANTS.MATCHER_DATATYPE_TP);
-                        task.setStatus(Record.Status.Pending.name());
-                        task.setNistpath(nistPath);
-                        matcherTaskDao.update(task);
-                        log.debug("Update Task {} success", id);
-                    }
-
-                    HafpisMatcherTask task1 = matcherTaskDao.select(id + "$");
-                    if (task1 == null) {
-                        log.debug("Get MatcherTask null for probeid: {}", id + "$");
-                        if (!imgmask.substring(10, 20).equals("0000000000")) {
-                            task1 = new HafpisMatcherTask();
-                            MatcherTaskKey key = new MatcherTaskKey();
-                            key.setProbeid(id + "$");
-                            key.setDatatype(CONSTANTS.MATCHER_DATATYPE_TP);
-                            task1.setKey(key);
-                            task1.setStatus(Record.Status.Pending.name());
-                            task1.setNistpath(nistPath);
-                            matcherTaskDao.insert(task1);
-                            log.debug("Insert Task {} success", id + "$");
-                        }
-                    } else {
-                        log.debug("Get MatcherTask {} ", id + "$");
-                        task1.getKey().setDatatype(CONSTANTS.MATCHER_DATATYPE_TP);
+                        task1.setKey(key);
                         task1.setStatus(Record.Status.Pending.name());
                         task1.setNistpath(nistPath);
-                        matcherTaskDao.update(task1);
+                        task1.setCreatetime(createtime);
+                        matcherTaskDao.insert(task1);
                         log.debug("Insert Task {} success", id + "$");
                     }
-                    dbopTask.setStatus(CONSTANTS.FINISH_STATUS);
-                    break;
-                default:
-                    log.error("dbopTasktype: {} error", dbopTaskType);
-                    break;
-            }
-            dbopTaskDao.update(dbopTask.getTaskidd(), dbopTask.getStatus(), dbopTask.getExptmsg());
-            log.info("Dbop-TPP taskid:{} finish. Status: {}", dbopTask.getTaskidd(), dbopTask.getStatus());
-        } catch (Exception e) {
-            log.error("Exception: ", e);
+                } else {
+                    log.debug("Get MatcherTask {} ", id + "$");
+                    task1.getKey().setDatatype(CONSTANTS.MATCHER_DATATYPE_TP);
+                    task1.setStatus(Record.Status.Pending.name());
+                    task1.setNistpath(nistPath);
+                    task1.setCreatetime(createtime);
+                    matcherTaskDao.update(task1);
+                    log.debug("Insert Task {} success", id + "$");
+                }
+                dbopTask.setStatus(CONSTANTS.FINISH_STATUS);
+                break;
+            default:
+                log.error("dbopTasktype: {} error", dbopTaskType);
+                break;
         }
-
-
+        dbopTaskDao.update(dbopTask.getTaskidd(), dbopTask.getStatus(), dbopTask.getExptmsg());
+        log.info("Dbop-TPP taskid:{} finish. Status: {}", dbopTask.getTaskidd(), dbopTask.getStatus());
     }
 
 //    @Override

@@ -104,7 +104,7 @@ public class FTPClientUtil {
             return ftpClientThreadLocal.get();
         } else {
             FTPClient ftpClient = new FTPClient(); //构造一个FtpClient实例
-//            ftpClient.setControlEncoding(encoding); //设置字符集
+            ftpClient.setControlEncoding(encoding); //设置字符集
             connect(ftpClient); //连接到ftp服务器
 
             //设置为passive模式
@@ -151,15 +151,20 @@ public class FTPClientUtil {
     private boolean connect(FTPClient ftpClient) throws FTPClientException {
         try {
 //            ftpClient.connect(host, port);
-            ftpClient.connect(host);
-
+            if (port != 0) {
+                ftpClient.connect(host, port);
+            } else {
+                ftpClient.connect(host);
+            }
             // 连接后检测返回码来校验连接是否成功
             int reply = ftpClient.getReplyCode();
 
             if (FTPReply.isPositiveCompletion(reply)) {
                 //登陆到ftp服务器
                 if (ftpClient.login(username, password)) {
+                    log.info("FTPReply after login:{}", ftpClient.getReplyCode());
                     setFileType(ftpClient);
+//                    ftpClient.setRemoteVerificationEnabled(false);
                     return true;
                 }
             } else {
@@ -323,6 +328,27 @@ public class FTPClientUtil {
                 }
             } catch (IOException e) {
                 throw new FTPClientException("Couldn't close FileOutputStream.", e);
+            }
+        }
+    }
+
+    public boolean get(String remoteFilePath, String remoteFilename, OutputStream outputStream) throws FTPClientException {
+        return get(remoteFilePath, remoteFilename, outputStream, true);
+    }
+
+    public boolean get(String remoteFIlePath, String remoteFilename, OutputStream outputStream, boolean autoClose) throws FTPClientException {
+        try {
+            FTPClient ftpClient = getFTPClient();
+            System.out.println(ftpClient.printWorkingDirectory());
+            ftpClient.changeWorkingDirectory(remoteFIlePath);
+            boolean succ = ftpClient.retrieveFile(remoteFilename, outputStream);
+            System.out.println(ftpClient.getReplyCode());
+            return succ;
+        } catch (IOException e) {
+            throw new FTPClientException("Couldn't get file from server.", e);
+        } finally {
+            if (autoClose) {
+                disconnect(); //关闭链接
             }
         }
     }

@@ -141,28 +141,34 @@ public class Utils {
         ftpClient.setPort(ftp_port);
         ftpClient.setUsername(ftp_usr);
         ftpClient.setPassword(ftp_pwd);
-        String remoteFilePath = path + ".\\" + name + ".nist";
-        String localFilePath = ".\\" + name;
+        String remoteFilePath = path + "/" + name + ".nist";
+        String localPath = System.getProperty("user.dir");
+        System.out.println("localpath is " + localPath);
+//        String localFilePath = "./" + name;
+        String localFilePath = localPath + "/" + name;
         try (OutputStream outputStream = new FileOutputStream(new File(localFilePath));){
-            ftpClient.get(remoteFilePath, outputStream);
+            log.info("remote file path is {}", remoteFilePath);
+            ftpClient.get(path, name + ".nist", outputStream);
             result = NistDecoder.decode(localFilePath);
+            return result;
         } catch (IOException e) {
-            log.error("Can't create local temp file for probeid:{}", name);
-            return null;
+            log.error("Can't create local temp file for probeid:{}", name, e);
+            return result;
         } catch (FTPClientException e) {
-            log.error("Can't get nist file from ftp server for probeid: {}", name);
-            return null;
+            log.error("Can't get nist file from ftp server for probeid: {}", name, e);
+            System.out.println(e.getMsg());
+            System.out.println(e.getException().getCause().toString());
+            return result;
         } finally {
             File file = new File(localFilePath);
             if (file.exists()) {
                 try {
                     file.delete();
                 } catch (Exception e) {
-                    log.warn("Can't delete the temp file {}", localFilePath);
+                    log.warn("Can't delete the temp file {}", localFilePath, e);
                 }
             }
         }
-        return result;
     }
 
 }

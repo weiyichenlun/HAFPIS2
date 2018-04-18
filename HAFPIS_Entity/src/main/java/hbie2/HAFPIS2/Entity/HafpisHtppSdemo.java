@@ -14,6 +14,7 @@ public class HafpisHtppSdemo {
     private String enrolldate;
     private String imgmask;
     private String mainno;
+    private String updatedate;
 
     public String getPersonid() {
         return personid;
@@ -71,6 +72,14 @@ public class HafpisHtppSdemo {
         this.mainno = mainno;
     }
 
+    public String getUpdatedate() {
+        return updatedate;
+    }
+
+    public void setUpdatedate(String updatedate) {
+        this.updatedate = updatedate;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -85,6 +94,7 @@ public class HafpisHtppSdemo {
         if (enrolldate != null ? !enrolldate.equals(htppSdemo.enrolldate) : htppSdemo.enrolldate != null) return false;
         if (imgmask != null ? !imgmask.equals(htppSdemo.imgmask) : htppSdemo.imgmask != null) return false;
         if (mainno != null ? !mainno.equals(htppSdemo.mainno) : htppSdemo.mainno != null) return false;
+        if (updatedate != null ? !updatedate.equals(htppSdemo.updatedate) : htppSdemo.updatedate != null) return false;
 
         return true;
     }
@@ -98,6 +108,7 @@ public class HafpisHtppSdemo {
         result = 31 * result + (enrolldate != null ? enrolldate.hashCode() : 0);
         result = 31 * result + (imgmask != null ? imgmask.hashCode() : 0);
         result = 31 * result + (mainno != null ? mainno.hashCode() : 0);
+        result = 31 * result + (updatedate != null ? updatedate.hashCode() : 0);
         return result;
     }
 }

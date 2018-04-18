@@ -53,6 +53,11 @@
         <mapping class="hbie2.HAFPIS2.Entity.HafpisPmtlCand"/>
         <mapping class="hbie2.HAFPIS2.Entity.HafpisPmttCand"/>
         <mapping class="hbie2.HAFPIS2.Entity.HafpisSrchTask"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisHlppKey"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisHplpKey"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisHtppKey"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisImgdbCaps"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisMatcherTask"/>
 
         <mapping resource="hbie2/HAFPIS2/Entity/HafpisDbopTask.hbm.xml"/>
         <mapping resource="hbie2/HAFPIS2/Entity/HafpisFaceCand.hbm.xml"/>

@@ -19,5 +19,13 @@
         <property name="nistpath">
             <column name="NISTPATH" sql-type="varchar2(128)" length="128"/>
         </property>
+
+        <property name="createtime">
+            <column name="CREATETIME" sql-type="varchar2(24)" length="24"/>
+        </property>
+
+        <property name="magic">
+            <column name="MAGIC" sql-type="varchar2(3)" length="3"/>
+        </property>
     </class>
 </hibernate-mapping>

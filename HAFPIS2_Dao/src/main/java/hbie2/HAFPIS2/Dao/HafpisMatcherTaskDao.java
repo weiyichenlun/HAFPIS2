@@ -1,10 +1,13 @@
 package hbie2.HAFPIS2.Dao;
 
 import hbie2.HAFPIS2.Entity.HafpisMatcherTask;
+import hbie2.HAFPIS2.Entity.MatcherTaskKey;
 import hbie2.HAFPIS2.Utils.HibernateSessionFactoryUtil;
 import org.hibernate.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.persistence.Query;
 
 /**
  * 描述：
@@ -15,11 +18,14 @@ import org.slf4j.LoggerFactory;
 public class HafpisMatcherTaskDao {
     private Logger log = LoggerFactory.getLogger(HafpisMatcherTask.class);
 
-    public HafpisMatcherTask select(String probeid) {
+    public HafpisMatcherTask select(String probeid, int datatype) {
         Session session = HibernateSessionFactoryUtil.getSession();
-        session.beginTransaction();
-        HafpisMatcherTask matcherTask = session.get(HafpisMatcherTask.class, probeid);
-        session.getTransaction().commit();
+//        session.beginTransaction();
+        MatcherTaskKey key = new MatcherTaskKey();
+        key.setProbeid(probeid);
+        key.setDatatype(datatype);
+        HafpisMatcherTask matcherTask = session.get(HafpisMatcherTask.class, key);
+//        session.getTransaction().commit();
         HibernateSessionFactoryUtil.closeSession();
         return matcherTask;
     }
@@ -62,7 +68,7 @@ public class HafpisMatcherTaskDao {
         String hql = "update HafpisMatcherTask matc set matc.status=:status, matc.nistpath=:nistpath where matc.probeid=:probeid";
         int updateCnt = session.createQuery(hql).setParameter("status", task.getStatus())
                 .setParameter("nistpath", task.getNistpath())
-                .setParameter("probeid", task.getProbeid())
+                .setParameter("probeid", task.getKey().getProbeid())
                 .executeUpdate();
         session.getTransaction().commit();
         HibernateSessionFactoryUtil.closeSession();
