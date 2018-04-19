@@ -52,7 +52,6 @@
             <groupId>hbie2</groupId>
             <artifactId>HAFPIS_FTP</artifactId>
             <version>1.0</version>
-            <scope>compile</scope>
         </dependency>
 
     </dependencies>

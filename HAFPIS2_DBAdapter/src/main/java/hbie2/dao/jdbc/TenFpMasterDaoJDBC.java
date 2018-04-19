@@ -232,12 +232,13 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
             }
 
             String id = (String) map.get("probeid");
-            String updateSql = "update HAFPIS_MATCHER_TASK set status=? where probeid=? and datatype=? and status=?";
+            String updateSql = "update HAFPIS_MATCHER_TASK set status=?, magic=? where probeid=? and datatype=? and status=?";
             ps = conn.prepareStatement(updateSql);
             ps.setString(1, Record.Status.Publishing.name());
-            ps.setString(2, id);
-            ps.setInt(3, CONSTANTS.MATCHER_DATATYPE_TP);
-            ps.setString(4, Record.Status.Trained.name());
+            ps.setString(2, magic);
+            ps.setString(3, id);
+            ps.setInt(4, CONSTANTS.MATCHER_DATATYPE_TP);
+            ps.setString(5, Record.Status.Trained.name());
             ps.executeUpdate();
             log.debug("fetch record to publish {}", id);
 
@@ -252,6 +253,11 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
             }
             return null;
         } finally {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException e) {
+                log.error("conn set auto commit error", e);
+            }
             if (ps != null) {
                 try {
                     ps.close();
@@ -279,18 +285,22 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
         PreparedStatement ps = null;
         try (Connection conn = this.queryRunner.getDataSource().getConnection()) {
             conn.setAutoCommit(false);
-            String processSql = "update HAFPIS_MATCHER_TASK set status=? where status=? and datatype=?";
+            String processSql = "update HAFPIS_MATCHER_TASK set status=?, magic=? where status=? and datatype=? and magic=?";
             ps = conn.prepareStatement(processSql);
             ps.setString(1, Record.Status.Pending.name());
-            ps.setString(2, Record.Status.Processing.name());
-            ps.setInt(3, CONSTANTS.MATCHER_DATATYPE_TP);
+            ps.setString(2, null);
+            ps.setString(3, Record.Status.Processing.name());
+            ps.setInt(4, CONSTANTS.MATCHER_DATATYPE_TP);
+            ps.setString(5, magic);
             ps.executeUpdate();
 
-            String trainSql = "update HAFPIS_MATCHER_TASK set status=? where status=? and datatype=?";
+            String trainSql = "update HAFPIS_MATCHER_TASK set status=?, magic=? where status=? and datatype=? and magic=?";
             ps = conn.prepareStatement(trainSql);
             ps.setString(1, Record.Status.Processed.name());
-            ps.setString(2, Record.Status.Training.name());
-            ps.setInt(3, CONSTANTS.MATCHER_DATATYPE_TP);
+            ps.setString(2, null);
+            ps.setString(3, Record.Status.Training.name());
+            ps.setInt(4, CONSTANTS.MATCHER_DATATYPE_TP);
+            ps.setString(5, magic);
             ps.executeUpdate();
 
             conn.commit();
@@ -302,6 +312,11 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
                 log.error("error. ", e);
             }
         } finally {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException e) {
+                log.error("conn set autocomit true error", e);
+            }
             if (ps != null) {
                 try {
                     ps.close();
@@ -314,10 +329,10 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
 
     @Override
     public void resetRecordPublishing(String magic) {
-        String publicshSql = "update HAFPIS_MATCHER_TASK set status=? where status=? and datatype=?";
+        String publicshSql = "update HAFPIS_MATCHER_TASK set status=?, magic=? where status=? and datatype=? and magic=?";
         try {
-            this.queryRunner.update(publicshSql, Record.Status.Trained.name(), Record.Status.Processing.name(),
-                    CONSTANTS.MATCHER_DATATYPE_TP);
+            this.queryRunner.update(publicshSql, Record.Status.Trained.name(), null, Record.Status.Publishing.name(),
+                    CONSTANTS.MATCHER_DATATYPE_TP, magic);
         } catch (SQLException e) {
             log.error("reset record publishing error. magic {}", magic, e);
         }

@@ -304,9 +304,9 @@ public class NistPackDecodeImp implements NistPackDecode, SdkHandler {
         type7.imgDataLen = type7.recLen - 5;
         type7.imgData = new byte[type7.imgDataLen];
         System.arraycopy(data, nCurPos, type7.imgData, 0, type7.imgDataLen);
-        EndPos += type7.imgDataLen;
+        nCurPos += type7.imgDataLen;
 
-        nNextPos = EndPos + 1;
+        nNextPos = nCurPos;
         type7.recLen = nNextPos;
         return type7;
     }
@@ -346,7 +346,7 @@ public class NistPackDecodeImp implements NistPackDecode, SdkHandler {
         type8.imgDataLen = type8.imgData.length;
         nCurPos += type8.imgDataLen;
 
-        nNextPos = nCurPos + 1;
+        nNextPos = nCurPos ;
 
         type8.recLen = nNextPos;
         return type8;

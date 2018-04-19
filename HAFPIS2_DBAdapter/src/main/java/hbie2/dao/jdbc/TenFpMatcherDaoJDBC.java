@@ -183,13 +183,14 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
                 if (matcherTask == null) {
                     CommonUtils.sleep(100);
                 } else {
-                    String updateSql = "update HAFPIS_MATCHER_TASK set status=? where probeid=? and datatype=?";
+                    String updateSql = "update HAFPIS_MATCHER_TASK set status=?, magic=? where probeid=? and datatype=?";
                     String probeid = matcherTask.getKey().getProbeid();
                     boolean is_fp = probeid.endsWith("$");
                     ps = conn.prepareStatement(updateSql);
                     ps.setString(1, Record.Status.Processing.name());
-                    ps.setString(2, probeid);
-                    ps.setInt(3, CONSTANTS.MATCHER_DATATYPE_TP);
+                    ps.setString(2, magic);
+                    ps.setString(3, probeid);
+                    ps.setInt(4, CONSTANTS.MATCHER_DATATYPE_TP);
                     ps.executeUpdate();
                     conn.commit();
 
@@ -199,8 +200,10 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
                     String path = matcherTask.getNistpath();
                     String filename = is_fp ? probeid.substring(0, probeid.length() - 1) : probeid;
                     log.debug("Path: {} filename: {}", path, filename);
-                    Map<Integer, List<NistImg>> nistImgMap = Utils.initFtpAndLoadNist(this.ftp_host, this.ftp_port,
-                            this.ftp_usr, this.ftp_pwd, path, filename);
+//                    Map<Integer, List<NistImg>> nistImgMap = Utils.initFtpAndLoadNist(this.ftp_host, this.ftp_port,
+//                            this.ftp_usr, this.ftp_pwd, path, filename);
+                    Map<Integer, List<NistImg>> nistImgMap = Utils.initFtpAndLoadNistByURL(this.ftp_host, this.ftp_port,
+                            this.ftp_usr, this.ftp_pwd, path + "/" + filename + ".nist");
                     if (is_fp) {
                         List<NistImg> fp_list = nistImgMap.get(16); //type 16: flat image
                         if (fp_list == null || fp_list.size() == 0) {
@@ -522,6 +525,7 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
     @Nullable
     @Override
     public TaskSearch fetchSearchToProcess(String s) {
+
         return dao.fetchSearchToProcess(s);
     }
 

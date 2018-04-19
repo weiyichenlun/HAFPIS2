@@ -13,7 +13,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -131,6 +134,40 @@ public class Utils {
             log.error("read fea file error: {}", fea_path, e);
         }
         return features;
+    }
+
+    public static Map<Integer, List<NistImg>> initFtpAndLoadNistByURL(String ftp_host, int ftp_port, String ftp_usr,
+                                                                 String ftp_pwd, String remoteFilePath) {
+        String ftpUrl = "ftp://%s:%s@%s/%s;type=i";
+        ftpUrl = String.format(ftpUrl, ftp_usr, ftp_pwd, ftp_host, remoteFilePath);
+        InputStream inputStream = null;
+        String localPath = System.getProperty("user.dir");
+        String localFilePath = localPath + "/temp.nist";
+        try (FileOutputStream fos = new FileOutputStream(new File(localFilePath));) {
+            URL url = new URL(ftpUrl);
+            URLConnection conn = url.openConnection();
+            inputStream = conn.getInputStream();
+
+            byte[] buffer = new byte[1024];
+            int byteread = -1;
+            while ((byteread = inputStream.read(buffer)) != -1) {
+                fos.write(buffer, 0, byteread);
+            }
+            fos.flush();
+
+            return NistDecoder.decode(localFilePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+
+                }
+            }
+        }
     }
 
     public static Map<Integer, List<NistImg>> initFtpAndLoadNist(String ftp_host, int ftp_port, String ftp_usr,

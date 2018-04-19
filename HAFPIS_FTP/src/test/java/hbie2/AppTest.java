@@ -24,9 +24,9 @@ public class AppTest
      */
     @Test
     public void shouldAnswerWithTrue() throws FileNotFoundException, FTPClientException {
-        String host = "172.16.0.193";
+        String host = "test001";
         String user = "HAFPIS";
-        String pwd = "HAFPIS11";
+        String pwd = "Qwsazx001";
         FTPClientUtil ftpClient = new FTPClientUtil();
         ftpClient.setHost(host);
         ftpClient.setUsername(user);
@@ -37,9 +37,32 @@ public class AppTest
         String localFilePath = localPath + "\\\\" + "R1101000008882017030074.nist";
         OutputStream outputStream = new FileOutputStream(new File(localFilePath));
         String filename = "R1100000008882018040001.nist";
-        ftpClient.get("/IMAGE/DIR_0001", "R1101000008882017030074.nist", outputStream);
+        boolean is = ftpClient.get(".", filename, outputStream);
+        System.out.println(is?"success":"failed");
+        try {
+            outputStream.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+//        String ftpUrl = "ftp://%s:%s@%s/%s;type=i";
+//        ftpUrl = String.format(ftpUrl, user, pwd, host, filename);
 //        try {
+//            URL url = new URL(ftpUrl);
+//            URLConnection connection = url.openConnection();
+//            InputStream inputStream = connection.getInputStream();
+//            FileOutputStream fos = new FileOutputStream(new File(localFilePath));
+//            byte[] buffer = new byte[1024];
+//            int byteRead = -1;
+//            while ((byteRead = inputStream.read(buffer)) != -1) {
+//                fos.write(buffer, 0, byteRead);
+//            }
+//
 //            outputStream.flush();
+//            outputStream.close();
+//            inputStream.close();
+//        } catch (MalformedURLException e) {
+//            e.printStackTrace();
 //        } catch (IOException e) {
 //            e.printStackTrace();
 //        }
