@@ -1,6 +1,7 @@
 package hbie2.dao.jdbc;
 
 import hbie2.DataCheckStatus;
+import hbie2.HAFPIS2.Entity.HafpisMatcherTask;
 import hbie2.HAFPIS2.Utils.CONSTANTS;
 import hbie2.HbieConfig;
 import hbie2.MasterInfo;
@@ -15,7 +16,6 @@ import kotlin.jvm.functions.Function2;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbutils.QueryRunner;
 import org.apache.commons.dbutils.handlers.ArrayListHandler;
-import org.apache.commons.dbutils.handlers.MapHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -28,7 +28,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -218,20 +217,19 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
         PreparedStatement ps = null;
         try (Connection conn = this.queryRunner.getDataSource().getConnection()){
             conn.setAutoCommit(false);
-            String sql = "select probeid from (select probeid from HAFPIS_MATCHER_TASK where status=? and datatype=? " +
+            String sql = "select * from (select * from HAFPIS_MATCHER_TASK where status=? and datatype=? " +
                     "order by probeid asc, createtime asc) where rownum <= 1";
             ps = conn.prepareStatement(sql);
             ps.setString(1, Record.Status.Trained.name());
             ps.setInt(2, CONSTANTS.MATCHER_DATATYPE_TP);
             ResultSet rs = ps.executeQuery();
-            MapHandler mapHandler = new MapHandler();
-            Map<String, Object> map = mapHandler.handle(rs);
+            HafpisMatcherTask matcherTask = Utils.convert(rs);
 
-            if (map == null || map.size() == 0) {
+            if (matcherTask == null) {
                 return null;
             }
 
-            String id = (String) map.get("probeid");
+            String id = matcherTask.getKey().getProbeid();
             String updateSql = "update HAFPIS_MATCHER_TASK set status=?, magic=? where probeid=? and datatype=? and status=?";
             ps = conn.prepareStatement(updateSql);
             ps.setString(1, Record.Status.Publishing.name());
@@ -249,20 +247,17 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
             try {
                 conn.rollback();
             } catch (SQLException e1) {
-                log.error("rollback error ", e);
             }
             return null;
         } finally {
             try {
                 conn.setAutoCommit(true);
             } catch (SQLException e) {
-                log.error("conn set auto commit error", e);
             }
             if (ps != null) {
                 try {
                     ps.close();
                 } catch (SQLException e) {
-                    log.error("ps close error ", e);
                 }
             }
         }
@@ -309,19 +304,16 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
             try {
                 conn.rollback();
             } catch (SQLException e1) {
-                log.error("error. ", e);
             }
         } finally {
             try {
                 conn.setAutoCommit(true);
             } catch (SQLException e) {
-                log.error("conn set autocomit true error", e);
             }
             if (ps != null) {
                 try {
                     ps.close();
                 } catch (SQLException e) {
-                    log.error("close preparestatement error", e);
                 }
             }
         }

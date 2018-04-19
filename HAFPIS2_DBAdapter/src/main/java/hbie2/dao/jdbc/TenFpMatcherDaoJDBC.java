@@ -1,7 +1,6 @@
 package hbie2.dao.jdbc;
 
 import hbie2.HAFPIS2.Entity.HafpisMatcherTask;
-import hbie2.HAFPIS2.Entity.MatcherTaskKey;
 import hbie2.HAFPIS2.Utils.CONSTANTS;
 import hbie2.HAFPIS2.Utils.CommonUtils;
 import hbie2.HbieConfig;
@@ -14,7 +13,6 @@ import hbie2.dao.mongodb.MatcherDAOMongoDB;
 import hbie2.nist.nistType.NistImg;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.dbutils.QueryRunner;
-import org.apache.commons.dbutils.handlers.BeanHandler;
 import org.apache.commons.dbutils.handlers.MapHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -178,7 +176,7 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
                 ps.setString(1, Record.Status.Pending.name());
                 ps.setInt(2, CONSTANTS.MATCHER_DATATYPE_TP);
                 ResultSet rs = ps.executeQuery();
-                HafpisMatcherTask matcherTask = convert(rs);
+                HafpisMatcherTask matcherTask = Utils.convert(rs);
 
                 if (matcherTask == null) {
                     CommonUtils.sleep(100);
@@ -245,39 +243,18 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
                 }
                 return null;
             } finally {
+                try {
+                    conn.setAutoCommit(true);
+                } catch (SQLException e) {
+                }
                 if (ps != null) {
                     try {
                         ps.close();
                     } catch (SQLException e) {
-                        log.error("ps close error", e);
                     }
                 }
             }
         }
-    }
-
-    private HafpisMatcherTask convert(ResultSet rs) {
-        HafpisMatcherTask matcherTask = new HafpisMatcherTask();
-        MatcherTaskKey key = new MatcherTaskKey();
-        try {
-            if (rs.next()) {
-                String id = rs.getString("probeid");
-                log.info("id is {}", id);
-                key.setProbeid(id);
-                key.setDatatype(rs.getInt("datatype"));
-                matcherTask.setKey(key);
-                matcherTask.setStatus(rs.getString("status"));
-                matcherTask.setCreatetime(rs.getString("createtime"));
-                matcherTask.setNistpath(rs.getString("nistpath"));
-            } else {
-                return null;
-            }
-        } catch (SQLException e) {
-            log.error("convert resultset error. ", e);
-            return null;
-        }
-
-        return matcherTask;
     }
 
     @Nullable
@@ -388,17 +365,32 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
     @Nullable
     @Override
     public Record fetchRecordToTrain(String magic) {
-        String sql = "select * from (select * from HAFPIS_MATCHER_TASK where status=? and datatype=? order by " +
-                "create_time) where rownum <= 1";
-        try {
-            HafpisMatcherTask matcherTask = this.queryRunner.query(sql, new BeanHandler<>(HafpisMatcherTask.class),
-                    Record.Status.Processed.name(), CONSTANTS.MATCHER_DATATYPE_TP);
-            if (matcherTask != null) {
+        PreparedStatement ps = null;
+        try (Connection conn = this.queryRunner.getDataSource().getConnection()) {
+            conn.setAutoCommit(false);
+            String sql = "select * from (select * from HAFPIS_MATCHER_TASK where status=? and datatype=? order by " +
+                    "create_time) where rownum <= 1";
+            ps = conn.prepareStatement(sql);
+            ps.setString(1, Record.Status.Processed.name());
+            ps.setInt(2, CONSTANTS.MATCHER_DATATYPE_TP);
+            ResultSet rs = ps.executeQuery();
+            HafpisMatcherTask matcherTask = Utils.convert(rs);
+
+            if (matcherTask == null) {
+                return null;
+            } else {
+                String updateSql = "update HAFPIS.HAFPIS_MATCHER_TASK set status=?, magic=? where probeid=? and datatype=?";
                 String pid = matcherTask.getKey().getProbeid();
+                ps = conn.prepareStatement(updateSql);
+                ps.setString(1, Record.Status.Training.name());
+                ps.setString(2, magic);
+                ps.setString(3, pid);
+                ps.setInt(4, CONSTANTS.MATCHER_DATATYPE_TP);
+                ps.executeUpdate();
+
                 boolean is_fp = pid.endsWith("$");
                 Record record = new Record();
                 record.setId(pid);
-                // get features
                 byte[][] features = new byte[10][];
                 String name = is_fp ? pid.substring(0, pid.length() - 1) : pid;
                 for (int i = 0; i < 10; i++) {
@@ -406,20 +398,38 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
                     sb.append("select mntdata from ");
                     sb.append(is_fp ? FPTABLES[i] : RPTABLES[i]);
                     sb.append(" where personid=?");
-                    features[i] = this.queryRunner.query(sb.toString(), rs -> {
-                        if (rs.next()) {
-                            return rs.getBytes("mntdata");
-                        }
-                        return new byte[0];
-                    }, name);
+                    ps = conn.prepareStatement(sb.toString());
+                    ps.setString(1, name);
+                    rs = ps.executeQuery();
+                    if (rs.next()) {
+                        features[i] = rs.getBytes("mntdata");
+                    }
                 }
+
+                conn.commit();
                 record.setFeatures(features);
+                record.setCreateTime(Utils.getDateFromStr(matcherTask.getCreatetime()));
                 return record;
             }
-            return null;
         } catch (SQLException e) {
             log.error("select record to train error.", e);
+            try {
+                conn.rollback();
+            } catch (SQLException e1) {
+            }
             return null;
+        } finally {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException e) {
+
+            }
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) {
+                }
+            }
         }
     }
 
@@ -434,11 +444,12 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
             try (Connection conn = this.queryRunner.getDataSource().getConnection()){
                 conn.setAutoCommit(false);
                 // update matcher_task
-                String sql = "update HAFPIS_MATCHER_TASK set status=? where probeid=? and datatype=?";
+                String sql = "update HAFPIS_MATCHER_TASK set status=? where probeid=? and datatype=? and status=?";
                 ps = conn.prepareStatement(sql);
-                ps.setString(1, Record.Status.Processed.name());
+                ps.setString(1, record.getStatus().name());
                 ps.setString(2, pid);
                 ps.setInt(3, CONSTANTS.MATCHER_DATATYPE_TP);
+                ps.setString(4, Record.Status.Processing.name());
                 ps.executeUpdate();
 
                 //update mnt table
@@ -454,15 +465,17 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
                     log.debug("updateSql is {}", updateSql);
                 }
                 conn.commit();
-
             } catch (SQLException e) {
                 log.error("Update HAFPIS_MATCHER_TASK and related MNT table error. {}/{}", pid, is_fp);
                 try {
                     conn.rollback();
                 } catch (SQLException e1) {
-                    log.error("rollback error. ", e);
                 }
             } finally {
+                try {
+                    conn.setAutoCommit(true);
+                } catch (SQLException e) {
+                }
                 if (ps != null) {
                     try {
                         ps.close();
@@ -485,11 +498,12 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
             conn.setAutoCommit(false);
 
             //update matcher_task
-            String sql = "update HAFPIS_MATCHER_TASK set status=? where probeid=? and datatype=?";
+            String sql = "update HAFPIS_MATCHER_TASK set status=? where probeid=? and datatype=? and status=?";
             ps = conn.prepareStatement(sql);
             ps.setString(1, Record.Status.Trained.name());
             ps.setString(2, pid);
             ps.setInt(3, CONSTANTS.MATCHER_DATATYPE_TP);
+            ps.setString(4, Record.Status.Training.name());
             ps.executeUpdate();
 
             if (is_fp) {
@@ -510,9 +524,12 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
             try {
                 conn.rollback();
             } catch (SQLException e1) {
-                log.error("rollback error. ", e);
             }
         } finally {
+            try {
+                conn.setAutoCommit(true);
+            } catch (SQLException e) {
+            }
             if (ps != null) {
                 try {
                     ps.close();

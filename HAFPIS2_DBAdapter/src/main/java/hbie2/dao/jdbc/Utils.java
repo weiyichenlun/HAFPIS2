@@ -1,5 +1,7 @@
 package hbie2.dao.jdbc;
 
+import hbie2.HAFPIS2.Entity.HafpisMatcherTask;
+import hbie2.HAFPIS2.Entity.MatcherTaskKey;
 import hbie2.ftp.FTPClientException;
 import hbie2.ftp.FTPClientUtil;
 import hbie2.nist.NistDecoder;
@@ -17,6 +19,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -136,8 +140,8 @@ public class Utils {
         return features;
     }
 
-    public static Map<Integer, List<NistImg>> initFtpAndLoadNistByURL(String ftp_host, int ftp_port, String ftp_usr,
-                                                                 String ftp_pwd, String remoteFilePath) {
+    public static Map<Integer, List<NistImg>> initFtpAndLoadNistByURL(String ftp_host, int ftp_port, String ftp_usr, String ftp_pwd, String remoteFilePath) {
+        Map<Integer, List<NistImg>> result = new HashMap<>();
         String ftpUrl = "ftp://%s:%s@%s/%s;type=i";
         ftpUrl = String.format(ftpUrl, ftp_usr, ftp_pwd, ftp_host, remoteFilePath);
         InputStream inputStream = null;
@@ -155,16 +159,16 @@ public class Utils {
             }
             fos.flush();
 
-            return NistDecoder.decode(localFilePath);
+            result = NistDecoder.decode(localFilePath);
+            return result;
         } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+            log.error("Get nist file through URL error. ", e);
+            return result;
         } finally {
             if (inputStream != null) {
                 try {
                     inputStream.close();
                 } catch (IOException e) {
-
                 }
             }
         }
@@ -206,6 +210,30 @@ public class Utils {
                 }
             }
         }
+    }
+
+    public static HafpisMatcherTask convert(ResultSet rs) {
+        HafpisMatcherTask matcherTask = new HafpisMatcherTask();
+        MatcherTaskKey key = new MatcherTaskKey();
+        if (rs == null) return null;
+        try {
+            if (rs.next()) {
+                String id = rs.getString("probeid");
+                log.info("id is {}", id);
+                key.setProbeid(id);
+                key.setDatatype(rs.getInt("datatype"));
+                matcherTask.setKey(key);
+                matcherTask.setStatus(rs.getString("status"));
+                matcherTask.setCreatetime(rs.getString("createtime"));
+                matcherTask.setNistpath(rs.getString("nistpath"));
+            } else {
+                return null;
+            }
+        } catch (SQLException e) {
+            log.error("convert resultset error. ", e);
+            return null;
+        }
+        return matcherTask;
     }
 
 }
