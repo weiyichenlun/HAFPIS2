@@ -4,10 +4,10 @@
     "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
 <hibernate-mapping package="hbie2.HAFPIS2.Entity" auto-import="true">
 
-    <class name="HafpisMatcherTask" table="HAFPIS_MATCHER_TASK">
-        <composite-id name="key" class="MatcherTaskKey">
+    <class name="HafpisRecordStatus" table="HAFPIS_RECORD_STATUS">
+        <composite-id name="key" class="hbie2.HAFPIS2.Entity.RecordStatusKey">
             <key-property name="probeid">
-                <column name="PROBEID" sql-type="varchar2(32)" length="32"/>
+                <column name="PID" sql-type="varchar2(32)" length="32"/>
             </key-property>
             <key-property name="datatype">
                 <column name="DATATYPE" sql-type="number(*)" precision="2147483646" not-null="true"/>

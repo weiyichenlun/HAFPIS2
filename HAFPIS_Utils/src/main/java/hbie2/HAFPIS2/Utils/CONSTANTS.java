@@ -28,13 +28,13 @@ public class CONSTANTS {
     public static final int SRCH_DATATYPE_FACE = 6;
     public static final int SRCH_DATATYPE_IRIS = 7;
 
-    //HAFPIS_MATCHER_TASK
-    public static final int MATCHER_DATATYPE_TP = 1;
-    public static final int MATCHER_DATATYPE_PP = 2;
-    public static final int MATCHER_DATATYPE_LPP = 4;
-    public static final int MATCHER_DATATYPE_PLP = 5;
-    public static final int MATCHER_DATATYPE_FACE = 6;
-    public static final int MATCHER_DATATYPE_IRIS = 7;
+    //HAFPIS_RECORD_STATUS
+    public static final int RECORD_DATATYPE_TP = 1;
+    public static final int RECORD_DATATYPE_PP = 2;
+    public static final int RECORD_DATATYPE_LPP = 4;
+    public static final int RECORD_DATATYPE_PLP = 5;
+    public static final int RECORD_DATATYPE_FACE = 6;
+    public static final int RECORD_DATATYPE_IRIS = 7;
 
     //HAFPIS_SRCH_TASK TASKTYPE
     public static final int SRCH_TASKTYPE_TT = 1;

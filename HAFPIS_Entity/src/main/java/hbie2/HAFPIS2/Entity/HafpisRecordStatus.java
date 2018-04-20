@@ -8,18 +8,18 @@ import java.util.Objects;
  * 创建时间:2018/4/12
  * 最后修改时间:2018/4/12
  */
-public class HafpisMatcherTask {
-    private MatcherTaskKey key;
+public class HafpisRecordStatus {
+    private RecordStatusKey key = new RecordStatusKey();
     private String status;
     private String nistpath;
     private String createtime;
     private String magic;
 
-    public MatcherTaskKey getKey() {
+    public RecordStatusKey getKey() {
         return key;
     }
 
-    public void setKey(MatcherTaskKey key) {
+    public void setKey(RecordStatusKey key) {
         this.key = key;
     }
 
@@ -59,7 +59,7 @@ public class HafpisMatcherTask {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        HafpisMatcherTask that = (HafpisMatcherTask) o;
+        HafpisRecordStatus that = (HafpisRecordStatus) o;
         return Objects.equals(key, that.key) &&
                 Objects.equals(status, that.status) &&
                 Objects.equals(nistpath, that.nistpath) &&

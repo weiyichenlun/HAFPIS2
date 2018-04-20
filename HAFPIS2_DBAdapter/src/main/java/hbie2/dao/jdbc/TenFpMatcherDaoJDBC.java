@@ -1,6 +1,6 @@
 package hbie2.dao.jdbc;
 
-import hbie2.HAFPIS2.Entity.HafpisMatcherTask;
+import hbie2.HAFPIS2.Entity.HafpisRecordStatus;
 import hbie2.HAFPIS2.Utils.CONSTANTS;
 import hbie2.HAFPIS2.Utils.CommonUtils;
 import hbie2.HbieConfig;
@@ -166,36 +166,36 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
     @Override
     public Record fetchRecordToProcess(String magic) {
         while (true) {
-            //find pending record from HAFPIS_MATCHER_TASK
+            //find pending record from HAFPIS_RECORD_STATUS
             PreparedStatement ps = null;
             try (Connection conn = this.queryRunner.getDataSource().getConnection()) {
                 conn.setAutoCommit(false);
-                String sql = "select * from (select * from HAFPIS_MATCHER_TASK where status=? and datatype=? order by " +
+                String sql = "select * from (select * from HAFPIS_RECORD_STATUS where status=? and datatype=? order by " +
                         "createtime asc) where rownum<=1";
                 ps = conn.prepareStatement(sql);
                 ps.setString(1, Record.Status.Pending.name());
-                ps.setInt(2, CONSTANTS.MATCHER_DATATYPE_TP);
+                ps.setInt(2, CONSTANTS.RECORD_DATATYPE_TP);
                 ResultSet rs = ps.executeQuery();
-                HafpisMatcherTask matcherTask = Utils.convert(rs);
+                HafpisRecordStatus recordStatus = Utils.convert(rs);
 
-                if (matcherTask == null) {
+                if (recordStatus == null) {
                     CommonUtils.sleep(100);
                 } else {
-                    String updateSql = "update HAFPIS_MATCHER_TASK set status=?, magic=? where probeid=? and datatype=?";
-                    String probeid = matcherTask.getKey().getProbeid();
+                    String updateSql = "update HAFPIS_RECORD_STATUS set status=?, magic=? where PID=? and datatype=?";
+                    String probeid = recordStatus.getKey().getProbeid();
                     boolean is_fp = probeid.endsWith("$");
                     ps = conn.prepareStatement(updateSql);
                     ps.setString(1, Record.Status.Processing.name());
                     ps.setString(2, magic);
                     ps.setString(3, probeid);
-                    ps.setInt(4, CONSTANTS.MATCHER_DATATYPE_TP);
+                    ps.setInt(4, CONSTANTS.RECORD_DATATYPE_TP);
                     ps.executeUpdate();
                     conn.commit();
 
                     Record record = new Record();
                     record.setId(probeid);
-                    record.setCreateTime(Utils.getDateFromStr(matcherTask.getCreatetime()));
-                    String path = matcherTask.getNistpath();
+                    record.setCreateTime(Utils.getDateFromStr(recordStatus.getCreatetime()));
+                    String path = recordStatus.getNistpath();
                     String filename = is_fp ? probeid.substring(0, probeid.length() - 1) : probeid;
                     log.debug("Path: {} filename: {}", path, filename);
 //                    Map<Integer, List<NistImg>> nistImgMap = Utils.initFtpAndLoadNist(this.ftp_host, this.ftp_port,
@@ -368,24 +368,24 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
         PreparedStatement ps = null;
         try (Connection conn = this.queryRunner.getDataSource().getConnection()) {
             conn.setAutoCommit(false);
-            String sql = "select * from (select * from HAFPIS_MATCHER_TASK where status=? and datatype=? order by " +
+            String sql = "select * from (select * from HAFPIS_RECORD_STATUS where status=? and datatype=? order by " +
                     "create_time) where rownum <= 1";
             ps = conn.prepareStatement(sql);
             ps.setString(1, Record.Status.Processed.name());
-            ps.setInt(2, CONSTANTS.MATCHER_DATATYPE_TP);
+            ps.setInt(2, CONSTANTS.RECORD_DATATYPE_TP);
             ResultSet rs = ps.executeQuery();
-            HafpisMatcherTask matcherTask = Utils.convert(rs);
+            HafpisRecordStatus recordStatus = Utils.convert(rs);
 
-            if (matcherTask == null) {
+            if (recordStatus == null) {
                 return null;
             } else {
-                String updateSql = "update HAFPIS.HAFPIS_MATCHER_TASK set status=?, magic=? where probeid=? and datatype=?";
-                String pid = matcherTask.getKey().getProbeid();
+                String updateSql = "update HAFPIS.HAFPIS_RECORD_STATUS set status=?, magic=? where PID=? and datatype=?";
+                String pid = recordStatus.getKey().getProbeid();
                 ps = conn.prepareStatement(updateSql);
                 ps.setString(1, Record.Status.Training.name());
                 ps.setString(2, magic);
                 ps.setString(3, pid);
-                ps.setInt(4, CONSTANTS.MATCHER_DATATYPE_TP);
+                ps.setInt(4, CONSTANTS.RECORD_DATATYPE_TP);
                 ps.executeUpdate();
 
                 boolean is_fp = pid.endsWith("$");
@@ -408,7 +408,7 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
 
                 conn.commit();
                 record.setFeatures(features);
-                record.setCreateTime(Utils.getDateFromStr(matcherTask.getCreatetime()));
+                record.setCreateTime(Utils.getDateFromStr(recordStatus.getCreatetime()));
                 return record;
             }
         } catch (SQLException e) {
@@ -444,11 +444,11 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
             try (Connection conn = this.queryRunner.getDataSource().getConnection()){
                 conn.setAutoCommit(false);
                 // update matcher_task
-                String sql = "update HAFPIS_MATCHER_TASK set status=? where probeid=? and datatype=? and status=?";
+                String sql = "update HAFPIS_RECORD_STATUS set status=? where PID=? and datatype=? and status=?";
                 ps = conn.prepareStatement(sql);
                 ps.setString(1, record.getStatus().name());
                 ps.setString(2, pid);
-                ps.setInt(3, CONSTANTS.MATCHER_DATATYPE_TP);
+                ps.setInt(3, CONSTANTS.RECORD_DATATYPE_TP);
                 ps.setString(4, Record.Status.Processing.name());
                 ps.executeUpdate();
 
@@ -466,7 +466,7 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
                 }
                 conn.commit();
             } catch (SQLException e) {
-                log.error("Update HAFPIS_MATCHER_TASK and related MNT table error. {}/{}", pid, is_fp);
+                log.error("Update HAFPIS_RECORD_STATUS and related MNT table error. {}/{}", pid, is_fp);
                 try {
                     conn.rollback();
                 } catch (SQLException e1) {
@@ -498,11 +498,11 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
             conn.setAutoCommit(false);
 
             //update matcher_task
-            String sql = "update HAFPIS_MATCHER_TASK set status=? where probeid=? and datatype=? and status=?";
+            String sql = "update HAFPIS_RECORD_STATUS set status=? where PID=? and datatype=? and status=?";
             ps = conn.prepareStatement(sql);
             ps.setString(1, Record.Status.Trained.name());
             ps.setString(2, pid);
-            ps.setInt(3, CONSTANTS.MATCHER_DATATYPE_TP);
+            ps.setInt(3, CONSTANTS.RECORD_DATATYPE_TP);
             ps.setString(4, Record.Status.Training.name());
             ps.executeUpdate();
 
@@ -520,7 +520,7 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
 
             conn.commit();
         } catch (SQLException e) {
-            log.error("Update HAFPIS_MATCHER_TASK and related MNT table error. {}/{}", pid, is_fp);
+            log.error("Update HAFPIS_RECORD_STATUS and related MNT table error. {}/{}", pid, is_fp);
             try {
                 conn.rollback();
             } catch (SQLException e1) {

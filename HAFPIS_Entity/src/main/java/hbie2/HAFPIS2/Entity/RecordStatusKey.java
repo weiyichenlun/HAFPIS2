@@ -8,7 +8,7 @@ import java.io.Serializable;
  * 创建时间:2018/4/13
  * 最后修改时间:2018/4/13
  */
-public class MatcherTaskKey implements Serializable {
+public class RecordStatusKey implements Serializable {
     private String probeid;
     private Integer datatype;
 
@@ -39,7 +39,7 @@ public class MatcherTaskKey implements Serializable {
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
-        MatcherTaskKey that = (MatcherTaskKey) obj;
+        RecordStatusKey that = (RecordStatusKey) obj;
         if (probeid != null ? !probeid.equals(that.probeid) : that.probeid != null) return false;
         if (datatype != null ? !datatype.equals(that.datatype) : that.datatype != null) return false;
         return true;

@@ -4,13 +4,13 @@ import hbie2.HAFPIS2.Dao.HafpisDbopTaskDao;
 import hbie2.HAFPIS2.Dao.HafpisHtppKeyDao;
 import hbie2.HAFPIS2.Dao.HafpisHtppSdemoDao;
 import hbie2.HAFPIS2.Dao.HafpisImgdbCapsDao;
-import hbie2.HAFPIS2.Dao.HafpisMatcherTaskDao;
+import hbie2.HAFPIS2.Dao.HafpisRecordStatusDao;
 import hbie2.HAFPIS2.Entity.HafpisDbopTask;
 import hbie2.HAFPIS2.Entity.HafpisHtppKey;
 import hbie2.HAFPIS2.Entity.HafpisHtppSdemo;
 import hbie2.HAFPIS2.Entity.HafpisImgdbCaps;
-import hbie2.HAFPIS2.Entity.HafpisMatcherTask;
-import hbie2.HAFPIS2.Entity.MatcherTaskKey;
+import hbie2.HAFPIS2.Entity.HafpisRecordStatus;
+import hbie2.HAFPIS2.Entity.RecordStatusKey;
 import hbie2.HAFPIS2.Service.AbstractService;
 import hbie2.HAFPIS2.Utils.CONSTANTS;
 import hbie2.HAFPIS2.Utils.CommonUtils;
@@ -49,12 +49,12 @@ public class HafpisDbopTppService extends AbstractService implements Runnable {
     private HafpisHtppSdemoDao htppSdemoDao;
     private HafpisDbopTaskDao dbopTaskDao;
     private HafpisHtppKeyDao htppKeyDao;
-    private HafpisMatcherTaskDao matcherTaskDao;
+    private HafpisRecordStatusDao recordStatusDao;
     private HafpisImgdbCapsDao imgdbCapsDao;
     private ExecutorService executorService;
     private ArrayBlockingQueue<HafpisDbopTask> dbopTaskQueue;
     private FTPClientUtil ftpClient;
-    private String suffix = ".nist";
+    private final String suffix = ".nist";
 
 
     @Override
@@ -67,7 +67,6 @@ public class HafpisDbopTppService extends AbstractService implements Runnable {
         }
         try {
             this.querynum = Integer.parseInt(cfg.getProperty("querynum"));
-
         } catch (NumberFormatException e) {
             log.error("querynum: {} config error, must be a number. Use default querynum: 10", cfg.getProperty("querynum"), e);
             this.querynum = 10;
@@ -83,7 +82,7 @@ public class HafpisDbopTppService extends AbstractService implements Runnable {
         dbopTaskDao = new HafpisDbopTaskDao();
         htppKeyDao = new HafpisHtppKeyDao();
         imgdbCapsDao = new HafpisImgdbCapsDao();
-        matcherTaskDao = new HafpisMatcherTaskDao();
+        recordStatusDao = new HafpisRecordStatusDao();
         executorService = Executors.newFixedThreadPool(CONSTANTS.NCORES > 8 ? 8 : CONSTANTS.NCORES);
         dbopTaskQueue = new ArrayBlockingQueue<>(CONSTANTS.DBOP_TPP_LIMIT);
     }
@@ -99,22 +98,40 @@ public class HafpisDbopTppService extends AbstractService implements Runnable {
             case 6: //delete:
                 if (HbieUtils.getInstance().hbie_FP != null) {
                     HbieUtils.getInstance().hbie_FP.deleteRecord(id);
+                    HafpisRecordStatus recordStatus = new HafpisRecordStatus();
+                    recordStatus.getKey().setProbeid(id);
+                    recordStatus.getKey().setDatatype(CONSTANTS.RECORD_DATATYPE_TP);
+                    recordStatusDao.delete(recordStatus);
                     HbieUtils.getInstance().hbie_FP.deleteRecord(id + "$");
+                    recordStatus.getKey().setProbeid(id + "$");
+                    recordStatus.getKey().setDatatype(CONSTANTS.RECORD_DATATYPE_TP);
+                    recordStatusDao.delete(recordStatus);
                 }
                 if (HbieUtils.getInstance().hbie_PP != null) {
                     HbieUtils.getInstance().hbie_PP.deleteRecord(id);
+                    HafpisRecordStatus recordStatus = new HafpisRecordStatus();
+                    recordStatus.getKey().setProbeid(id);
+                    recordStatus.getKey().setDatatype(CONSTANTS.RECORD_DATATYPE_PP);
+                    recordStatusDao.delete(recordStatus);
                 }
                 if (HbieUtils.getInstance().hbie_FACE != null) {
                     HbieUtils.getInstance().hbie_FACE.deleteRecord(id);
+                    HafpisRecordStatus recordStatus = new HafpisRecordStatus();
+                    recordStatus.getKey().setProbeid(id);
+                    recordStatus.getKey().setDatatype(CONSTANTS.RECORD_DATATYPE_FACE);
+                    recordStatusDao.delete(recordStatus);
                 }
                 if (HbieUtils.getInstance().hbie_IRIS != null) {
                     HbieUtils.getInstance().hbie_IRIS.deleteRecord(id);
+                    HafpisRecordStatus recordStatus = new HafpisRecordStatus();
+                    recordStatus.getKey().setProbeid(id);
+                    recordStatus.getKey().setDatatype(CONSTANTS.RECORD_DATATYPE_IRIS);
+                    recordStatusDao.delete(recordStatus);
                 }
                 dbopTask.setStatus(CONSTANTS.FINISH_STATUS);
                 break;
             case 5: //insert
-//                String path = dbopTask.getNistpath();
-                String path = ".";
+                String path = dbopTask.getNistpath();
                 if (path == null) {
                     path = findPathByDb(dbopTask.getProbeid());
                     if (path == null) {
@@ -126,34 +143,33 @@ public class HafpisDbopTppService extends AbstractService implements Runnable {
                 }
 
                 if (!imgmask.substring(0, 10).equals("0000000000")) {
-                    HafpisMatcherTask matcherTask = new HafpisMatcherTask();
-                    MatcherTaskKey key = new MatcherTaskKey();
+                    HafpisRecordStatus recordStatus = new HafpisRecordStatus();
+                    RecordStatusKey key = new RecordStatusKey();
                     key.setProbeid(id);
-                    key.setDatatype(CONSTANTS.MATCHER_DATATYPE_TP);
-                    matcherTask.setKey(key);
-                    matcherTask.setStatus(Record.Status.Pending.name());
-                    matcherTask.setNistpath(path);;
-                    matcherTask.setCreatetime(createtime);
-                    matcherTaskDao.insert(matcherTask);
-                    log.debug("Insert into HAFPIS_MATCHER_TASK success. Probeid: {}", id);
+                    key.setDatatype(CONSTANTS.RECORD_DATATYPE_TP);
+                    recordStatus.setKey(key);
+                    recordStatus.setStatus(Record.Status.Pending.name());
+                    recordStatus.setNistpath(path);;
+                    recordStatus.setCreatetime(createtime);
+                    recordStatusDao.insert(recordStatus);
+                    log.debug("Insert into HAFPIS_RECORD_STATUS success. Probeid: {}", id);
                 }
                 if (!imgmask.substring(10, 20).equals("0000000000")) {
-                    HafpisMatcherTask matcherTask = new HafpisMatcherTask();
-                    MatcherTaskKey key = new MatcherTaskKey();
+                    HafpisRecordStatus recordStatus = new HafpisRecordStatus();
+                    RecordStatusKey key = new RecordStatusKey();
                     key.setProbeid(id + "$");
-                    key.setDatatype(CONSTANTS.MATCHER_DATATYPE_TP);
-                    matcherTask.setKey(key);
-                    matcherTask.setStatus(Record.Status.Pending.name());
-                    matcherTask.setNistpath(path);
-                    matcherTask.setCreatetime(createtime);
-                    matcherTaskDao.insert(matcherTask);
-                    log.debug("Insert into HAFPIS_MATCHER_TASK success. Probeid: {}", id + "$");
+                    key.setDatatype(CONSTANTS.RECORD_DATATYPE_TP);
+                    recordStatus.setKey(key);
+                    recordStatus.setStatus(Record.Status.Pending.name());
+                    recordStatus.setNistpath(path);
+                    recordStatus.setCreatetime(createtime);
+                    recordStatusDao.insert(recordStatus);
+                    log.debug("Insert into HAFPIS_RECORD_STATUS success. Probeid: {}", id + "$");
                 }
-                log.debug("Insert into HAFPIS_MATCHER_TASK success. Probeid: {}", dbopTask.getProbeid());
                 dbopTask.setStatus(CONSTANTS.FINISH_STATUS);
                 break;
             case 7: //update
-                HafpisMatcherTask task = matcherTaskDao.select(id, CONSTANTS.MATCHER_DATATYPE_TP);
+                HafpisRecordStatus task = recordStatusDao.select(id, CONSTANTS.RECORD_DATATYPE_TP);
                 String nistPath = dbopTask.getNistpath();
                 if (nistPath == null) {
                     nistPath = findPathByDb(id);
@@ -166,52 +182,53 @@ public class HafpisDbopTppService extends AbstractService implements Runnable {
                 }
                 // rp matcher task
                 if (task == null) {
-                    log.debug("Get MatcherTask null for probeid: {}", id);
+                    log.debug("Get RecordStatus null for probeid: {}", id);
                     if (!imgmask.substring(0, 10).equals("0000000000")) {
-                        task = new HafpisMatcherTask();
-                        MatcherTaskKey key = new MatcherTaskKey();
+                        task = new HafpisRecordStatus();
+                        RecordStatusKey key = new RecordStatusKey();
                         key.setProbeid(id);
-                        key.setDatatype(CONSTANTS.MATCHER_DATATYPE_TP);
+                        key.setDatatype(CONSTANTS.RECORD_DATATYPE_TP);
                         task.setKey(key);
                         task.setStatus(Record.Status.Pending.name());
                         task.setNistpath(nistPath);
                         task.setCreatetime(createtime);
-                        matcherTaskDao.insert(task);
+                        recordStatusDao.insert(task);
                         log.debug("Insert Task {} success", id);
                     }
                 } else {
-                    log.debug("Get MatcherTask {} ", id);
-                    task.getKey().setDatatype(CONSTANTS.MATCHER_DATATYPE_TP);
+                    //TODO what if imgmask == "0000000000"
+                    log.debug("Get RecordStatus {} ", id);
+                    task.getKey().setDatatype(CONSTANTS.RECORD_DATATYPE_TP);
                     task.setStatus(Record.Status.Pending.name());
                     task.setNistpath(nistPath);
                     task.setCreatetime(createtime);
-                    matcherTaskDao.update(task);
+                    recordStatusDao.update(task);
                     log.debug("Update Task {} success", id);
                 }
 
-                HafpisMatcherTask task1 = matcherTaskDao.select(id + "$", CONSTANTS.MATCHER_DATATYPE_TP);
+                HafpisRecordStatus task1 = recordStatusDao.select(id + "$", CONSTANTS.RECORD_DATATYPE_TP);
                 if (task1 == null) {
-                    log.debug("Get MatcherTask null for probeid: {}", id + "$");
+                    log.debug("Get RecordStatus null for probeid: {}", id + "$");
 
                     if (!imgmask.substring(10, 20).equals("0000000000")) {
-                        task1 = new HafpisMatcherTask();
-                        MatcherTaskKey key = new MatcherTaskKey();
+                        task1 = new HafpisRecordStatus();
+                        RecordStatusKey key = new RecordStatusKey();
                         key.setProbeid(id + "$");
-                        key.setDatatype(CONSTANTS.MATCHER_DATATYPE_TP);
+                        key.setDatatype(CONSTANTS.RECORD_DATATYPE_TP);
                         task1.setKey(key);
                         task1.setStatus(Record.Status.Pending.name());
                         task1.setNistpath(nistPath);
                         task1.setCreatetime(createtime);
-                        matcherTaskDao.insert(task1);
+                        recordStatusDao.insert(task1);
                         log.debug("Insert Task {} success", id + "$");
                     }
                 } else {
-                    log.debug("Get MatcherTask {} ", id + "$");
-                    task1.getKey().setDatatype(CONSTANTS.MATCHER_DATATYPE_TP);
+                    log.debug("Get RecordStatus {} ", id + "$");
+                    task1.getKey().setDatatype(CONSTANTS.RECORD_DATATYPE_TP);
                     task1.setStatus(Record.Status.Pending.name());
                     task1.setNistpath(nistPath);
                     task1.setCreatetime(createtime);
-                    matcherTaskDao.update(task1);
+                    recordStatusDao.update(task1);
                     log.debug("Insert Task {} success", id + "$");
                 }
                 dbopTask.setStatus(CONSTANTS.FINISH_STATUS);
@@ -355,8 +372,9 @@ public class HafpisDbopTppService extends AbstractService implements Runnable {
                                 dbopTaskDao.update(dbopTask);
                             } catch (InterruptedException e) {
                                 log.error("DBOP_TPP Put {} into dboptask queue error", dbopTask.getTaskidd(), e);
+                                dbopTask.setStatus(CONSTANTS.WAIT_STATUS);
+                                dbopTaskDao.update(dbopTask);
                             }
-
                         }
                     }
                 }
@@ -378,6 +396,7 @@ public class HafpisDbopTppService extends AbstractService implements Runnable {
                 doWork(list);
             } catch (InterruptedException e) {
                 log.error("Take dbopTask from queue error.", e);
+                CommonUtils.sleep(100);
             }
         }
     }

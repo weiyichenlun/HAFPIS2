@@ -1,7 +1,7 @@
 package hbie2.dao.jdbc;
 
-import hbie2.HAFPIS2.Entity.HafpisMatcherTask;
-import hbie2.HAFPIS2.Entity.MatcherTaskKey;
+import hbie2.HAFPIS2.Entity.HafpisRecordStatus;
+import hbie2.HAFPIS2.Entity.RecordStatusKey;
 import hbie2.ftp.FTPClientException;
 import hbie2.ftp.FTPClientUtil;
 import hbie2.nist.NistDecoder;
@@ -212,9 +212,9 @@ public class Utils {
         }
     }
 
-    public static HafpisMatcherTask convert(ResultSet rs) {
-        HafpisMatcherTask matcherTask = new HafpisMatcherTask();
-        MatcherTaskKey key = new MatcherTaskKey();
+    public static HafpisRecordStatus convert(ResultSet rs) {
+        HafpisRecordStatus recordStatus = new HafpisRecordStatus();
+        RecordStatusKey key = new RecordStatusKey();
         if (rs == null) return null;
         try {
             if (rs.next()) {
@@ -222,10 +222,10 @@ public class Utils {
                 log.info("id is {}", id);
                 key.setProbeid(id);
                 key.setDatatype(rs.getInt("datatype"));
-                matcherTask.setKey(key);
-                matcherTask.setStatus(rs.getString("status"));
-                matcherTask.setCreatetime(rs.getString("createtime"));
-                matcherTask.setNistpath(rs.getString("nistpath"));
+                recordStatus.setKey(key);
+                recordStatus.setStatus(rs.getString("status"));
+                recordStatus.setCreatetime(rs.getString("createtime"));
+                recordStatus.setNistpath(rs.getString("nistpath"));
             } else {
                 return null;
             }
@@ -233,7 +233,7 @@ public class Utils {
             log.error("convert resultset error. ", e);
             return null;
         }
-        return matcherTask;
+        return recordStatus;
     }
 
 }

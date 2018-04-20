@@ -57,7 +57,7 @@
         <mapping class="hbie2.HAFPIS2.Entity.HafpisHplpKey"/>
         <mapping class="hbie2.HAFPIS2.Entity.HafpisHtppKey"/>
         <mapping class="hbie2.HAFPIS2.Entity.HafpisImgdbCaps"/>
-        <mapping class="hbie2.HAFPIS2.Entity.HafpisMatcherTask"/>
+        <mapping class="hbie2.HAFPIS2.Entity.HafpisRecordStatus"/>
 
         <mapping resource="hbie2/HAFPIS2/Entity/HafpisDbopTask.hbm.xml"/>
         <mapping resource="hbie2/HAFPIS2/Entity/HafpisFaceCand.hbm.xml"/>
@@ -78,7 +78,7 @@
         <mapping resource="hbie2/HAFPIS2/Entity/HafpisHplpKey.hbm.xml"/>
         <mapping resource="hbie2/HAFPIS2/Entity/HafpisHtppKey.hbm.xml"/>
         <mapping resource="hbie2/HAFPIS2/Entity/HafpisImgdbCaps.hbm.xml"/>
-        <mapping resource="hbie2/HAFPIS2/Entity/HafpisMatcherTask.hbm.xml"/>
+        <mapping resource="hbie2/HAFPIS2/Entity/HafpisRecordStatus.hbm.xml"/>
 
     </session-factory>
 </hibernate-configuration>

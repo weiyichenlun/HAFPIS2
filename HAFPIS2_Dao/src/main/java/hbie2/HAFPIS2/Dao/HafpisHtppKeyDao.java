@@ -11,14 +11,11 @@ import org.hibernate.Session;
  * 最后修改时间:2018/4/11
  */
 public class HafpisHtppKeyDao {
-    private Session session;
 
-    public HafpisHtppKey get(String taskidd) {
-        session = HibernateSessionFactoryUtil.getSession();
-        session.beginTransaction();
-        HafpisHtppKey htppKey = session.get(HafpisHtppKey.class, taskidd);
-        session.getTransaction().commit();
-        HibernateSessionFactoryUtil.closeSession();
+    public HafpisHtppKey get(String personid) {
+        Session session = HibernateSessionFactoryUtil.getSession();
+        HafpisHtppKey htppKey = session.get(HafpisHtppKey.class, personid);
+        session.close();
         return htppKey;
     }
 }

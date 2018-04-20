@@ -1,7 +1,7 @@
 package hbie2.dao.jdbc;
 
 import hbie2.DataCheckStatus;
-import hbie2.HAFPIS2.Entity.HafpisMatcherTask;
+import hbie2.HAFPIS2.Entity.HafpisRecordStatus;
 import hbie2.HAFPIS2.Utils.CONSTANTS;
 import hbie2.HbieConfig;
 import hbie2.MasterInfo;
@@ -217,25 +217,25 @@ public class LatFpMasterDaoJDBC implements MasterDAO, Serializable {
         PreparedStatement ps = null;
         try (Connection conn = this.queryRunner.getDataSource().getConnection()){
             conn.setAutoCommit(false);
-            String sql = "select * from (select * from HAFPIS_MATCHER_TASK where status=? and datatype=? " +
+            String sql = "select * from (select * from HAFPIS_RECORD_STATUS where status=? and datatype=? " +
                     "order by probeid asc, createtime asc) where rownum <= 1";
             ps = conn.prepareStatement(sql);
             ps.setString(1, Record.Status.Trained.name());
-            ps.setInt(2, CONSTANTS.MATCHER_DATATYPE_LPP);
+            ps.setInt(2, CONSTANTS.RECORD_DATATYPE_LPP);
             ResultSet rs = ps.executeQuery();
-            HafpisMatcherTask matcherTask = Utils.convert(rs);
+            HafpisRecordStatus recordStatus = Utils.convert(rs);
 
-            if (matcherTask == null) {
+            if (recordStatus == null) {
                 return null;
             }
 
-            String id = matcherTask.getKey().getProbeid();
-            String updateSql = "update HAFPIS_MATCHER_TASK set status=?, magic=? where probeid=? and datatype=? and status=?";
+            String id = recordStatus.getKey().getProbeid();
+            String updateSql = "update HAFPIS_RECORD_STATUS set status=?, magic=? where PID=? and datatype=? and status=?";
             ps = conn.prepareStatement(updateSql);
             ps.setString(1, Record.Status.Publishing.name());
             ps.setString(2, magic);
             ps.setString(3, id);
-            ps.setInt(4, CONSTANTS.MATCHER_DATATYPE_LPP);
+            ps.setInt(4, CONSTANTS.RECORD_DATATYPE_LPP);
             ps.setString(5, Record.Status.Trained.name());
             ps.executeUpdate();
             log.debug("fetch record to publish {}", id);
@@ -265,9 +265,9 @@ public class LatFpMasterDaoJDBC implements MasterDAO, Serializable {
 
     @Override
     public void finishRecord(String id) {
-        String sql = "update HAFPIS_MATCHER_TASK set status=? where probeid=? and datatype=? and status=?";
+        String sql = "update HAFPIS_RECORD_STATUS set status=? where probeid=? and datatype=? and status=?";
         try {
-            this.queryRunner.update(sql, Record.Status.Done.name(), id, CONSTANTS.MATCHER_DATATYPE_LPP,
+            this.queryRunner.update(sql, Record.Status.Done.name(), id, CONSTANTS.RECORD_DATATYPE_LPP,
                     Record.Status.Publishing.name());
             log.debug("finish record {}", id);
         } catch (SQLException e) {
@@ -280,21 +280,21 @@ public class LatFpMasterDaoJDBC implements MasterDAO, Serializable {
         PreparedStatement ps = null;
         try (Connection conn = this.queryRunner.getDataSource().getConnection()) {
             conn.setAutoCommit(false);
-            String processSql = "update HAFPIS_MATCHER_TASK set status=?, magic=? where status=? and datatype=? and magic=?";
+            String processSql = "update HAFPIS_RECORD_STATUS set status=?, magic=? where status=? and datatype=? and magic=?";
             ps = conn.prepareStatement(processSql);
             ps.setString(1, Record.Status.Pending.name());
             ps.setString(2, null);
             ps.setString(3, Record.Status.Processing.name());
-            ps.setInt(4, CONSTANTS.MATCHER_DATATYPE_LPP);
+            ps.setInt(4, CONSTANTS.RECORD_DATATYPE_LPP);
             ps.setString(5, magic);
             ps.executeUpdate();
 
-            String trainSql = "update HAFPIS_MATCHER_TASK set status=?, magic=? where status=? and datatype=? and magic=?";
+            String trainSql = "update HAFPIS_RECORD_STATUS set status=?, magic=? where status=? and datatype=? and magic=?";
             ps = conn.prepareStatement(trainSql);
             ps.setString(1, Record.Status.Processed.name());
             ps.setString(2, null);
             ps.setString(3, Record.Status.Training.name());
-            ps.setInt(4, CONSTANTS.MATCHER_DATATYPE_LPP);
+            ps.setInt(4, CONSTANTS.RECORD_DATATYPE_LPP);
             ps.setString(5, magic);
             ps.executeUpdate();
 
@@ -321,10 +321,10 @@ public class LatFpMasterDaoJDBC implements MasterDAO, Serializable {
 
     @Override
     public void resetRecordPublishing(String magic) {
-        String publicshSql = "update HAFPIS_MATCHER_TASK set status=?, magic=? where status=? and datatype=? and magic=?";
+        String publicshSql = "update HAFPIS_RECORD_STATUS set status=?, magic=? where status=? and datatype=? and magic=?";
         try {
             this.queryRunner.update(publicshSql, Record.Status.Trained.name(), null, Record.Status.Publishing.name(),
-                    CONSTANTS.MATCHER_DATATYPE_LPP, magic);
+                    CONSTANTS.RECORD_DATATYPE_LPP, magic);
         } catch (SQLException e) {
             log.error("reset record publishing error. magic {}", magic, e);
         }
