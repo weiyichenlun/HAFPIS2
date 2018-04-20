@@ -372,8 +372,6 @@ public class HafpisDbopTppService extends AbstractService implements Runnable {
                                 dbopTaskDao.update(dbopTask);
                             } catch (InterruptedException e) {
                                 log.error("DBOP_TPP Put {} into dboptask queue error", dbopTask.getTaskidd(), e);
-                                dbopTask.setStatus(CONSTANTS.WAIT_STATUS);
-                                dbopTaskDao.update(dbopTask);
                             }
                         }
                     }

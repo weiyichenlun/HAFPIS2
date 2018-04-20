@@ -13,6 +13,7 @@ public class HafpisHplpSdemo {
     private Integer dbid;
     private Integer solveattr;
     private String enrolldate;
+    private String updatedate;
 
     public String getLatentid() {
         return latentid;
@@ -62,6 +63,14 @@ public class HafpisHplpSdemo {
         this.enrolldate = enrolldate;
     }
 
+    public String getUpdatedate() {
+        return updatedate;
+    }
+
+    public void setUpdatedate(String updatedate) {
+        this.updatedate = updatedate;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -75,7 +84,7 @@ public class HafpisHplpSdemo {
         if (dbid != null ? !dbid.equals(that.dbid) : that.dbid != null) return false;
         if (solveattr != null ? !solveattr.equals(that.solveattr) : that.solveattr != null) return false;
         if (enrolldate != null ? !enrolldate.equals(that.enrolldate) : that.enrolldate != null) return false;
-
+        if (updatedate != null ? !updatedate.equals(that.updatedate) : that.updatedate != null) return false;
         return true;
     }
 
@@ -87,6 +96,7 @@ public class HafpisHplpSdemo {
         result = 31 * result + (dbid != null ? dbid.hashCode() : 0);
         result = 31 * result + (solveattr != null ? solveattr.hashCode() : 0);
         result = 31 * result + (enrolldate != null ? enrolldate.hashCode() : 0);
+        result = 31 * result + (updatedate != null ? updatedate.hashCode() : 0);
         return result;
     }
 }

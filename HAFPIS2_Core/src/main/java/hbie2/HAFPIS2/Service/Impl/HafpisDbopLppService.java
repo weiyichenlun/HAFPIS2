@@ -239,8 +239,6 @@ public class HafpisDbopLppService extends AbstractService implements Runnable {
                                 dbopTaskDao.update(dbopTask);
                             } catch (InterruptedException e) {
                                 log.error("DBOP_LPP put {} into dboptask queue error.", dbopTask.getTaskidd());
-                                dbopTask.setStatus(CONSTANTS.WAIT_STATUS);
-                                dbopTaskDao.update(dbopTask);
                             }
                         }
                     }
@@ -268,8 +266,8 @@ public class HafpisDbopLppService extends AbstractService implements Runnable {
         }
     }
 
-    private String findPathByDb(String personid) {
-        HafpisHlppKey hlppKey = hlppKeyDao.get(personid);
+    private String findPathByDb(String latentid) {
+        HafpisHlppKey hlppKey = hlppKeyDao.get(latentid);
         if (hlppKey != null) {
             String devname = hlppKey.getDevname();
             HafpisImgdbCaps imgdbCaps = imgdbCapsDao.get(devname);
@@ -280,7 +278,7 @@ public class HafpisDbopLppService extends AbstractService implements Runnable {
                 return null;
             }
         } else {
-            log.error("Can't find HtppKey for taskidd: {}", personid);
+            log.error("Can't find HtppKey for latentid: {}", latentid);
             return null;
         }
     }
