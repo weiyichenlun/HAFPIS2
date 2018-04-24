@@ -29,7 +29,7 @@
 
         <!--oracle 配置-->
         <property name="dialect">org.hibernate.dialect.Oracle10gDialect</property>
-        <property name="connection.url">jdbc:oracle:thin:@172.16.0.193:1521:HAFPIS</property>
+        <property name="connection.url">jdbc:oracle:thin:@172.16.0.214:1521:HAFPIS</property>
         <property name="connection.driver_class">oracle.jdbc.OracleDriver</property>
         <property name="connection.username">HAFPIS</property>
         <property name="connection.password">HAFPIS11</property>

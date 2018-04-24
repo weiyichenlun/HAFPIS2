@@ -1,6 +1,6 @@
 package hbie2.HAFPIS2.Dao;
 
-import hbie2.HAFPIS2.Entity.HafpisFpltCand;
+import hbie2.HAFPIS2.Entity.HafpisFpllCand;
 import hbie2.HAFPIS2.Utils.HibernateSessionFactoryUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -12,21 +12,21 @@ import java.util.List;
 /**
  * 描述：
  * 作者：ZP
- * 创建时间:2018/4/8
- * 最后修改时间:2018/4/8
+ * 创建时间:2018/4/23
+ * 最后修改时间:2018/4/23
  */
-public class HafpisFpltCandDao {
-    private Logger log = LoggerFactory.getLogger(HafpisFpltCandDao.class);
+public class HafpisFpllCandDao {
+    private Logger log = LoggerFactory.getLogger(HafpisFpllCandDao.class);
 
-    public void insert(List<HafpisFpltCand> result) {
+    public void insert(List<HafpisFpllCand> result) {
         Session session = HibernateSessionFactoryUtil.getSession();
         Transaction tx = session.getTransaction();
         try {
             tx.begin();
             String taskidd = result.get(0).getKeys().getTaskidd();
             for (int i = 0; i < result.size(); i++) {
-                log.debug("FPLT: the rank {} and tha taskidd/candid/position {}/{}/{}", i,
-                        result.get(i).getKeys().getTaskidd(), result.get(i).getKeys().getCandid(), result.get(i).getKeys().getPosition());
+                log.debug("FPLT: the rank {} and tha taskidd/candid/position {}/{}", i,
+                        result.get(i).getKeys().getTaskidd(), result.get(i).getKeys().getCandid());
                 session.save(result.get(i));
                 if (i % 20 == 0) {
                     session.flush();
@@ -47,7 +47,7 @@ public class HafpisFpltCandDao {
         Transaction tx = session.getTransaction();
         try {
             tx.begin();
-            String hql = "delete from HafpisFpltCand fplt where fplt.keys.taskidd=:taskidd";
+            String hql = "delete from HafpisFpllCand fpll where fpll.keys.taskidd=:taskidd";
             int deleteCnt = session.createQuery(hql).setParameter("taskidd", taskidd).executeUpdate();
             log.info("FPLT: delete {} records with taskidd {}", deleteCnt, taskidd);
             tx.commit();

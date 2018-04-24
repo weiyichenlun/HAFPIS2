@@ -1,6 +1,6 @@
 package hbie2.HAFPIS2.Dao;
 
-import hbie2.HAFPIS2.Entity.HafpisFpltCand;
+import hbie2.HAFPIS2.Entity.HafpisFptlCand;
 import hbie2.HAFPIS2.Utils.HibernateSessionFactoryUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -12,13 +12,13 @@ import java.util.List;
 /**
  * 描述：
  * 作者：ZP
- * 创建时间:2018/4/8
- * 最后修改时间:2018/4/8
+ * 创建时间:2018/4/23
+ * 最后修改时间:2018/4/23
  */
-public class HafpisFpltCandDao {
-    private Logger log = LoggerFactory.getLogger(HafpisFpltCandDao.class);
+public class HafpisFptlCandDao {
+    private Logger log = LoggerFactory.getLogger(HafpisFptlCandDao.class);
 
-    public void insert(List<HafpisFpltCand> result) {
+    public void insert(List<HafpisFptlCand> result) {
         Session session = HibernateSessionFactoryUtil.getSession();
         Transaction tx = session.getTransaction();
         try {
@@ -47,7 +47,7 @@ public class HafpisFpltCandDao {
         Transaction tx = session.getTransaction();
         try {
             tx.begin();
-            String hql = "delete from HafpisFpltCand fplt where fplt.keys.taskidd=:taskidd";
+            String hql = "delete from HafpisFptlCand fptl where fptl.keys.taskidd=:taskidd";
             int deleteCnt = session.createQuery(hql).setParameter("taskidd", taskidd).executeUpdate();
             log.info("FPLT: delete {} records with taskidd {}", deleteCnt, taskidd);
             tx.commit();

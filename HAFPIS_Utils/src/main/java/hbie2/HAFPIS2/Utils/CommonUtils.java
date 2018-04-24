@@ -324,12 +324,16 @@ public class CommonUtils {
 
     public static <T extends AbstractBean> List<T> getLimitedList(List<T> list, int numOfCand) {
         List<T> result = new ArrayList<>();
+        if (list == null || list.size() == 0) {
+            return result;
+        }
+        list = sort(list);
         if (list.size() > numOfCand) {
             result.addAll(list.subList(0, numOfCand));
         } else {
             result.addAll(list);
         }
-        return sort(result);
+        return result;
     }
 
     private static <T extends Comparable<? super T>> List<T> sort(List<T> result) {

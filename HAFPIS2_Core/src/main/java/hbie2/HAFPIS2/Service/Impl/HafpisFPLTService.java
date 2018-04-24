@@ -155,9 +155,9 @@ public class HafpisFPLTService extends AbstractService implements Runnable {
                                         OtherCompositeKeys keys = new OtherCompositeKeys();
                                         keys.setTaskidd(taskidd);
                                         keys.setCandid(candidate.getId());
-                                        keys.setPosition(candidate.getFp());
+                                        keys.setPosition(candidate.getFp() + 1);
                                         fpltCand.setKeys(keys);
-                                        fpltCand.setTransno(srchTask.getTransno() + 1);
+                                        fpltCand.setTransno(srchTask.getTransno());
                                         fpltCand.setProbeid(srchTask.getProbeid());
                                         fpltCand.setDbid((Integer) candidate.getFields().get("dbid"));
                                         fpltCand.setScore(candidate.getScore());
@@ -209,9 +209,9 @@ public class HafpisFPLTService extends AbstractService implements Runnable {
                                             OtherCompositeKeys keys = new OtherCompositeKeys();
                                             keys.setTaskidd(taskidd);
                                             keys.setCandid(candidate.getId());
-                                            keys.setPosition(candidate.getFp());
+                                            keys.setPosition(candidate.getFp() + 11);
                                             fpltCand.setKeys(keys);
-                                            fpltCand.setTransno(srchTask.getTransno() + 11);
+                                            fpltCand.setTransno(srchTask.getTransno());
                                             fpltCand.setProbeid(srchTask.getProbeid());
                                             fpltCand.setDbid((Integer) candidate.getFields().get("dbid"));
                                             fpltCand.setScore(candidate.getScore());
@@ -268,11 +268,8 @@ public class HafpisFPLTService extends AbstractService implements Runnable {
                                 fpltCand.setProbeid(srchTask.getProbeid());
                                 fpltCand.setDbid((Integer) candidate.getFields().get("dbid"));
                                 fpltCand.setScore(candidate.getScore());
-                                if (j < avgCandNum) {
-                                    fpltCandMap.put(candidate.getId(), fpltCand);
-                                } else {
-                                    rest.add(fpltCand);
-                                }
+
+                                fpltCandMap.put(candidate.getId(), fpltCand);
                             }
                             break;
                         }
@@ -322,12 +319,7 @@ public class HafpisFPLTService extends AbstractService implements Runnable {
                                         fpltCand.getKeys().setPosition(candidate.getFp() + 11);
                                     }
                                 }
-
-                                if (j < avgCandNum) {
-                                    fpltCandMap.put(candid, fpltCand);
-                                } else {
-                                    rest.add(fpltCand);
-                                }
+                                fpltCandMap.put(candid, fpltCand);
                             }
                             break;
                         }
@@ -355,7 +347,7 @@ public class HafpisFPLTService extends AbstractService implements Runnable {
                         for (int i = 0; i < fpltCands.size(); i++) {
                             fpltCands.get(i).setCandrank(i + 1);
                         }
-                        log.info("Inserting....");
+                        log.debug("Inserting....");
                         fpltDao.delete(taskidd);
                         fpltDao.insert(fpltCands);
                         srchTask.setStatus(CONSTANTS.FINISH_STATUS);
@@ -364,12 +356,13 @@ public class HafpisFPLTService extends AbstractService implements Runnable {
                     }
                 } catch (Exception e) {
                     log.error("Impossiable", e);
+                    srchTask.setStatus(CONSTANTS.WAIT_STATUS);
+                    srchTaskDao.update(srchTask);
                 }
             } else {
                 log.error("Get HBIE client null. Suspenging until HBIE is started..");
                 log.info("waiting FPLT client...");
                 srchTask.setStatus(CONSTANTS.WAIT_STATUS);
-                srchTaskDao.update(srchTask);
                 srchTaskDao.update(srchTask);
                 CommonUtils.sleep(interval * 1000);
             }
@@ -382,7 +375,7 @@ public class HafpisFPLTService extends AbstractService implements Runnable {
         //add shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             srchTaskDao.updateStatus(CONSTANTS.SRCH_DATATYPE_TP, CONSTANTS.SRCH_TASKTYPE_LT);
-            log.info("Fp executorservice is shutting down");
+            log.info("FPLT is shutting down");
         }));
 
         log.info("FPLT service start. Update status first...");
@@ -392,11 +385,24 @@ public class HafpisFPLTService extends AbstractService implements Runnable {
         new Thread(() -> {
             log.info("FPLT_SRCHTASKQUEUE_THREAD start...");
             while (true) {
-                List<HafpisSrchTask> list = srchTaskDao.getSrchTasks(CONSTANTS.WAIT_STATUS, CONSTANTS.SRCH_DATATYPE_TP,
+                List<HafpisSrchTask> list = srchTaskDao.getSrchTasks(CONSTANTS.URGENT_STATUS, CONSTANTS.SRCH_DATATYPE_TP,
                         CONSTANTS.SRCH_TASKTYPE_LT, querynum);
                 if (null == list || list.size() == 0) {
-                    log.info("sleeping");
-                    CommonUtils.sleep(interval * 1000);
+                    list = srchTaskDao.getSrchTasks(CONSTANTS.WAIT_STATUS, CONSTANTS.RECORD_DATATYPE_TP,
+                            CONSTANTS.SRCH_TASKTYPE_LT, querynum);
+                    if (null == list || list.size() == 0) {
+                        CommonUtils.sleep(interval * 1000);
+                    } else {
+                        for (HafpisSrchTask srchTask : list) {
+                            try {
+                                srchTaskQueue.put(srchTask);
+                                srchTask.setStatus(CONSTANTS.PROCESSING_STATUS);
+                                srchTaskDao.update(srchTask);
+                            } catch (InterruptedException e) {
+                                log.error("FPLT: Put {} into srchtask queue error.",srchTask.getTaskidd(), e);
+                            }
+                        }
+                    }
                 } else {
                     for (HafpisSrchTask srchTask : list) {
                         try {
@@ -404,7 +410,7 @@ public class HafpisFPLTService extends AbstractService implements Runnable {
                             srchTask.setStatus(CONSTANTS.PROCESSING_STATUS);
                             srchTaskDao.update(srchTask);
                         } catch (InterruptedException e) {
-                            log.error("FPLT: Put {} into srchtask queue error.",srchTask.getTaskidd(), e);
+                            log.error("FPLT: put urgent{} into srchtask queue error.",srchTask.getTaskidd(), e);
                         }
                     }
                 }
@@ -422,7 +428,7 @@ public class HafpisFPLTService extends AbstractService implements Runnable {
                 srchTask = srchTaskQueue.take();
                 log.info("take one srchtask");
                 if (srchTask.getSrchdata() == null || srchTask.getSrchdata().length == 0) {
-                    log.error("SrchTask {} srchdata is null.");
+                    log.error("SrchTask {} srchdata is null.", srchTask.getTaskidd());
                     srchTask.setStatus(CONSTANTS.ERROR_STATUS);
                     srchTask.setExptmsg("Srchdata is null");
                     srchTaskDao.update(srchTask);

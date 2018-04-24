@@ -375,6 +375,16 @@ public class HafpisDbopTppService extends AbstractService implements Runnable {
                             }
                         }
                     }
+                } else {
+                    for (HafpisDbopTask dbopTask : dbopTasks) {
+                        try {
+                            dbopTaskQueue.put(dbopTask);
+                            dbopTask.setStatus(CONSTANTS.PROCESSING_STATUS);
+
+                        } catch (InterruptedException e) {
+                            log.error("DBOP_TPP put urgent {} into dboptask queue error", dbopTask.getTaskidd(), e);
+                        }
+                    }
                 }
             }
         }, "DBOP_TPP_DBOPTASKQUEUE_THREAD").start();

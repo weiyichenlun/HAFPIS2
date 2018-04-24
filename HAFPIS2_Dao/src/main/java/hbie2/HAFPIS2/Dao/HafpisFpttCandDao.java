@@ -18,35 +18,43 @@ import java.util.List;
 public class HafpisFpttCandDao {
     private Logger log = LoggerFactory.getLogger(HafpisFpttCandDao.class);
 
-    public HafpisFpttCandDao() {
-    }
-
     public void insert(List<HafpisFpttCand> result) {
         Session session = HibernateSessionFactoryUtil.getSession();
         Transaction tx = session.getTransaction();
-        if (!tx.isActive()) {
+        try {
             tx.begin();
-        }
-        String taskidd = result.get(0).getKeys().getTaskidd();
-        for (int i = 0; i < result.size(); i++) {
-            log.debug("FPTT: the rank {} and tha candid {}/{}", i, result.get(i).getKeys().getTaskidd(), result.get(i).getKeys().getCandid());
-            session.save(result.get(i));
-            if (i % 20 == 0) {
-                session.flush();
-                session.clear();
+            String taskidd = result.get(0).getKeys().getTaskidd();
+            for (int i = 0; i < result.size(); i++) {
+                log.debug("FPTT: the rank {} and tha candid {}/{}", i, result.get(i).getKeys().getTaskidd(), result.get(i).getKeys().getCandid());
+                session.save(result.get(i));
+                if (i % 20 == 0) {
+                    session.flush();
+                    session.clear();
+                }
             }
+            tx.commit();
+        } catch (Exception e) {
+            log.error("insert cand error. ", e);
+            tx.rollback();
+        } finally {
+            session.close();
         }
-        tx.commit();
-        HibernateSessionFactoryUtil.closeSession();
     }
 
     public void delete(String taskidd) {
         Session session = HibernateSessionFactoryUtil.getSession();
-        session.beginTransaction();
-        String hql = "delete HafpisFpttCand fptt where fptt.keys.taskidd=:taskidd";
-        int deleteCnt = session.createQuery(hql).setParameter("taskidd", taskidd).executeUpdate();
-        log.info("FPTT: delete {} records with taskidd {}", deleteCnt, taskidd);
-        session.getTransaction().commit();
-        HibernateSessionFactoryUtil.closeSession();
+        Transaction tx = session.getTransaction();
+        try {
+            tx.begin();
+            String hql = "delete from HafpisFpttCand fptt where fptt.keys.taskidd=:taskidd";
+            int deleteCnt = session.createQuery(hql).setParameter("taskidd", taskidd).executeUpdate();
+            log.info("FPTT: delete {} records with taskidd {}", deleteCnt, taskidd);
+            tx.commit();
+        } catch (Exception e) {
+            log.error("delete cand error. ", e);
+            tx.rollback();
+        } finally {
+            session.close();
+        }
     }
 }
