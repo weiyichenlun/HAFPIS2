@@ -23,7 +23,6 @@ public class HafpisFpttCandDao {
         Transaction tx = session.getTransaction();
         try {
             tx.begin();
-            String taskidd = result.get(0).getKeys().getTaskidd();
             for (int i = 0; i < result.size(); i++) {
                 log.debug("FPTT: the rank {} and tha candid {}/{}", i, result.get(i).getKeys().getTaskidd(), result.get(i).getKeys().getCandid());
                 session.save(result.get(i));
@@ -37,7 +36,17 @@ public class HafpisFpttCandDao {
             log.error("insert cand error. ", e);
             tx.rollback();
         } finally {
-            session.close();
+            HibernateSessionFactoryUtil.closeSession();;
+        }
+    }
+
+    public void insert(List<HafpisFpttCand> result, Session session) {
+        for (int i = 0; i < result.size(); i++) {
+            session.saveOrUpdate(result.get(i));
+            if (i % 20 == 0) {
+                session.flush();
+                session.clear();
+            }
         }
     }
 
@@ -54,7 +63,7 @@ public class HafpisFpttCandDao {
             log.error("delete cand error. ", e);
             tx.rollback();
         } finally {
-            session.close();
+            HibernateSessionFactoryUtil.closeSession();;
         }
     }
 }

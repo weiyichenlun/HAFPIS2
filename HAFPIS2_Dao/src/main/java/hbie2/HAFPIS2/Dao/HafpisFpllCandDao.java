@@ -38,7 +38,7 @@ public class HafpisFpllCandDao {
             log.error("insert cands error. ", e);
             tx.rollback();
         } finally {
-            session.close();
+            HibernateSessionFactoryUtil.closeSession();;
         }
     }
 
@@ -55,7 +55,7 @@ public class HafpisFpllCandDao {
             log.error("delete cands error.", e);
             tx.rollback();
         } finally {
-            session.close();
+            HibernateSessionFactoryUtil.closeSession();;
         }
     }
 }

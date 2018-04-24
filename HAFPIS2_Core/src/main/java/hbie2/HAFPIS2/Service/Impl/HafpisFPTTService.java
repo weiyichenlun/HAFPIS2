@@ -11,11 +11,15 @@ import hbie2.HAFPIS2.Service.AbstractService;
 import hbie2.HAFPIS2.Utils.CONSTANTS;
 import hbie2.HAFPIS2.Utils.CommonUtils;
 import hbie2.HAFPIS2.Utils.HbieUtils;
+import hbie2.HAFPIS2.Utils.HibernateSessionFactoryUtil;
 import hbie2.TaskSearch;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,8 +80,8 @@ public class HafpisFPTTService extends AbstractService implements Runnable {
             log.error("Rpmnt and fpmnt are both null. taskidd: {}", srchTask.getTaskidd());
             srchTask.setStatus(CONSTANTS.ERROR_STATUS);
             srchTask.setExptmsg("Rpmnt and fpmnt are both null");
-            srchTaskDao.update(srchTask);
-//            srchTaskDao.update(srchTask.getTaskidd(), CONSTANTS.ERROR_STATUS, "Rpmnt and fpmnt are both null");
+//            srchTaskDao.update(srchTask);
+            updateSrchOnly(srchTask);
         } else {
             try {
                 Map<String, HafpisFpttCand> fpttCandMap = new HashMap<>();
@@ -108,15 +112,15 @@ public class HafpisFPTTService extends AbstractService implements Runnable {
                             if (task == null) {
                                 log.error("FPTT: Impossible. taskidd: {}, uid: {}", taskidd, uid);
                                 srchTask.setStatus(CONSTANTS.WAIT_STATUS);
-                                srchTaskDao.update(srchTask);
-//                                srchTaskDao.update(taskidd, CONSTANTS.WAIT_STATUS);
+//                                srchTaskDao.update(srchTask);
+                                updateSrchOnly(srchTask);
                                 break;
                             } else if (task.getStatus() == TaskSearch.Status.Error) {
                                 log.error("FPTT rpmnt search error. taskidd:{}, uid:{}", taskidd, uid);
                                 srchTask.setStatus(CONSTANTS.ERROR_STATUS);
                                 srchTask.setExptmsg(task.getMsg());
-                                srchTaskDao.update(srchTask);
-//                                srchTaskDao.update(taskidd, CONSTANTS.ERROR_STATUS, task.getMsg());
+//                                srchTaskDao.update(srchTask);
+                                updateSrchOnly(srchTask);
                                 break;
                             } else if (task.getStatus() != TaskSearch.Status.Done) {
                                 CommonUtils.sleep(100);
@@ -155,8 +159,8 @@ public class HafpisFPTTService extends AbstractService implements Runnable {
                         log.error("Get HBIE client null. Suspenging until HBIE is started..");
                         log.info("waiting FPTT client...");
                         srchTask.setStatus(CONSTANTS.WAIT_STATUS);
-                        srchTaskDao.update(srchTask);
-//                        srchTaskDao.update(srchTask.getTaskidd(), CONSTANTS.WAIT_STATUS);
+//                        srchTaskDao.update(srchTask);
+                        updateSrchOnly(srchTask);
                         CommonUtils.sleep(interval * 1000);
                     }
                 }
@@ -172,15 +176,15 @@ public class HafpisFPTTService extends AbstractService implements Runnable {
                             if (task == null) {
                                 log.error("Impossible. taskidd: {}", taskidd);
                                 srchTask.setStatus(CONSTANTS.WAIT_STATUS);
-                                srchTaskDao.update(srchTask);
-//                                srchTaskDao.update(taskidd, CONSTANTS.WAIT_STATUS);
+//                                srchTaskDao.update(srchTask);
+                                updateSrchOnly(srchTask);
                                 break;
                             } else if (task.getStatus() == TaskSearch.Status.Error) {
                                 log.error("FPTT fpmnt search error. taskidd: {}", taskidd);
                                 srchTask.setStatus(CONSTANTS.ERROR_STATUS);
                                 srchTask.setExptmsg(task.getMsg());
-                                srchTaskDao.update(srchTask);
-//                                srchTaskDao.update(taskidd, CONSTANTS.ERROR_STATUS, task.getMsg());
+//                                srchTaskDao.update(srchTask);
+                                updateSrchOnly(srchTask);
                                 break;
                             } else if (task.getStatus() != TaskSearch.Status.Done) {
                                 CommonUtils.sleep(100);
@@ -226,8 +230,8 @@ public class HafpisFPTTService extends AbstractService implements Runnable {
                         log.error("Get HBIE client null. Suspending until HBIE is started..");
                         log.info("waiting FPTT client...");
                         srchTask.setStatus(CONSTANTS.WAIT_STATUS);
-                        srchTaskDao.update(srchTask);
-//                        srchTaskDao.update(srchTask.getTaskidd(), CONSTANTS.WAIT_STATUS);
+//                        srchTaskDao.update(srchTask);
+                        updateSrchOnly(srchTask);
                         CommonUtils.sleep(interval * 1000);
                     }
                 }
@@ -238,25 +242,28 @@ public class HafpisFPTTService extends AbstractService implements Runnable {
                     log.info("FPTT search finish. No results for taskidd: {}", taskidd);
                     srchTask.setStatus(CONSTANTS.FINISH_NOMATCH_STATUS);
                     srchTask.setExptmsg("No result");
-                    srchTaskDao.update(srchTask);
-//                    srchTaskDao.update(taskidd, CONSTANTS.FINISH_NOMATCH_STATUS, "No results");
+//                    srchTaskDao.update(srchTask);
+                    updateSrchOnly(srchTask);
                 } else {
                     List<HafpisFpttCand> fpttCands = new ArrayList<>();
                     fpttCands.addAll(fpttCandMap.values());
                     if (fpttCands.size() > numOfCand) {
                         fpttCands = CommonUtils.getLimitedList(fpttCands, numOfCand);
+                    } else {
+                        Collections.sort(fpttCands);
                     }
                     // rank
                     for (int i = 0; i < fpttCands.size(); i++) {
                         fpttCands.get(i).setCandrank(i + 1);
                     }
                     log.info("Inserting....");
-                    fpttDao.delete(taskidd);
-                    fpttDao.insert(fpttCands);
                     srchTask.setStatus(CONSTANTS.FINISH_STATUS);
-                    srchTaskDao.update(srchTask);
+                    updateSrchAndFPTT(srchTask, fpttCands);
+
+//                    fpttDao.delete(taskidd);
+//                    fpttDao.insert(fpttCands);
+//                    srchTaskDao.update(srchTask);
                     log.info("srchtask srch finish");
-//                    srchTaskDao.update(taskidd, CONSTANTS.FINISH_STATUS);
                 }
             } catch (Exception e) {
                 log.error("Impossiable", e);
@@ -289,7 +296,8 @@ public class HafpisFPTTService extends AbstractService implements Runnable {
                         try {
                             srchTaskQueue.put(srchTask);
                             srchTask.setStatus(CONSTANTS.PROCESSING_STATUS);
-                            srchTaskDao.update(srchTask);
+//                            srchTaskDao.update(srchTask);
+                            updateSrchOnly(srchTask);
                         } catch (InterruptedException e) {
                             log.error("FPTT: Put {} into srchtask queue error.",srchTask.getTaskidd(), e);
                         }
@@ -302,7 +310,7 @@ public class HafpisFPTTService extends AbstractService implements Runnable {
     }
 
     private void FPTT() {
-        log.debug("FPTT_SRARCH_THREAD start...");
+        log.info("FPTT_SRARCH_THREAD start...");
         while (true) {
             HafpisSrchTask srchTask = null;
             try {
@@ -312,8 +320,8 @@ public class HafpisFPTTService extends AbstractService implements Runnable {
                     log.error("SrchTask {} srchdata is null.");
                     srchTask.setStatus(CONSTANTS.ERROR_STATUS);
                     srchTask.setExptmsg("Srchdata is null");
-                    srchTaskDao.update(srchTask);
-//                    srchTaskDao.update(srchTask.getTaskidd(), CONSTANTS.ERROR_STATUS, "Srchdata is null");
+//                    srchTaskDao.update(srchTask);
+                    updateSrchOnly(srchTask);
                 } else {
                     log.info("get srchtask: {}", srchTask.getTaskidd());
                     CommonUtils.convert(srchTask);
@@ -321,8 +329,8 @@ public class HafpisFPTTService extends AbstractService implements Runnable {
                         log.error("Convert srchdata error. taskidd: {}", srchTask.getTaskidd());
                         srchTask.setStatus(CONSTANTS.ERROR_STATUS);
                         srchTask.setExptmsg("Convert srchdata error");
-                        srchTaskDao.update(srchTask);
-//                        srchTaskDao.update(srchTask.getTaskidd(), CONSTANTS.ERROR_STATUS, "Convert srchdata error");
+//                        srchTaskDao.update(srchTask);
+                        updateSrchOnly(srchTask);
                     } else {
                         List<HafpisSrchTask> list = new ArrayList<>();
                         list.add(srchTask);
@@ -335,4 +343,40 @@ public class HafpisFPTTService extends AbstractService implements Runnable {
         }
     }
 
+    private void updateSrchOnly(HafpisSrchTask srchTask) {
+        Session session = HibernateSessionFactoryUtil.getSession();
+        Transaction tx = null;
+        try {
+            tx = session.getTransaction();
+            tx.begin();
+            srchTaskDao.update(srchTask, session);
+            tx.commit();
+        } catch (Exception e) {
+            log.error("update srchtask error.", e);
+            if (tx != null) {
+                tx.rollback();
+            }
+        } finally {
+            HibernateSessionFactoryUtil.closeSession();
+        }
+    }
+
+    private void updateSrchAndFPTT(HafpisSrchTask srchTask, List<HafpisFpttCand> fpttCands) {
+        Transaction tx = null;
+        Session session = HibernateSessionFactoryUtil.getSession();
+        try {
+            tx = session.getTransaction();
+            tx.begin();
+            srchTaskDao.update(srchTask, session);
+            fpttDao.insert(fpttCands, session);
+            tx.commit();
+        } catch (Exception e) {
+            log.error("update srch and fptt error.", e);
+            if (tx != null) {
+                tx.rollback();
+            }
+        } finally {
+            HibernateSessionFactoryUtil.closeSession();;
+        }
+    }
 }

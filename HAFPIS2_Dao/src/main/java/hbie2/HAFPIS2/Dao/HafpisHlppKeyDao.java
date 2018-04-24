@@ -15,7 +15,7 @@ public class HafpisHlppKeyDao {
     public HafpisHlppKey get(String latentid) {
         Session session = HibernateSessionFactoryUtil.getSession();
         HafpisHlppKey hlppKey = session.get(HafpisHlppKey.class, latentid);
-        session.close();
+        HibernateSessionFactoryUtil.closeSession();;
         return hlppKey;
     }
 }

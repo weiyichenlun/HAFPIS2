@@ -18,7 +18,7 @@ import java.io.File;
 public class HibernateSessionFactoryUtil {
     private static final Logger log = LoggerFactory.getLogger(HibernateSessionFactoryUtil.class);
     private static final Configuration cfg = new Configuration();
-    private static SessionFactory sessionFactory;
+    private static SessionFactory sessionFactory = null;
     private static final ThreadLocal<Session> threadLocal = new ThreadLocal<>();
 
     public static Session getSession() {
@@ -43,7 +43,7 @@ public class HibernateSessionFactoryUtil {
         Session session = threadLocal.get();
         threadLocal.set(null);
         if (session != null) {
-            session.close();
+            HibernateSessionFactoryUtil.closeSession();;
         }
     }
 }

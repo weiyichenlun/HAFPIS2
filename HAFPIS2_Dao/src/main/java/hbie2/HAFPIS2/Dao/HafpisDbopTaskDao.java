@@ -4,7 +4,6 @@ import hbie2.HAFPIS2.Entity.HafpisDbopTask;
 import hbie2.HAFPIS2.Utils.CONSTANTS;
 import hbie2.HAFPIS2.Utils.DateUtil;
 import hbie2.HAFPIS2.Utils.HibernateSessionFactoryUtil;
-import hbie2.HAFPIS2.Utils.StringUtil;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 
@@ -67,6 +66,10 @@ public class HafpisDbopTaskDao {
                 .setParameter("taskidd", dbopTask.getTaskidd()).executeUpdate();
         session.getTransaction().commit();
         HibernateSessionFactoryUtil.closeSession();
+    }
+
+    public void update(HafpisDbopTask dbopTask, Session session) {
+        session.update(dbopTask);
     }
 
     public boolean update(String taskidd, int status, String exptmsg) {

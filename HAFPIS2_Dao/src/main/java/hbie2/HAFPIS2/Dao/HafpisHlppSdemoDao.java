@@ -15,7 +15,7 @@ public class HafpisHlppSdemoDao {
     public Integer getDbId(String latentid) {
         Session session = HibernateSessionFactoryUtil.getSession();
         HafpisHlppSdemo hlppSdemo = session.get(HafpisHlppSdemo.class, latentid);
-        session.close();
+        HibernateSessionFactoryUtil.closeSession();;
         return hlppSdemo == null ? 0 : hlppSdemo.getDbid();
     }
 

@@ -27,7 +27,7 @@ public class HafpisFptlCandDao {
             for (int i = 0; i < result.size(); i++) {
                 log.debug("FPLT: the rank {} and tha taskidd/candid/position {}/{}/{}", i,
                         result.get(i).getKeys().getTaskidd(), result.get(i).getKeys().getCandid(), result.get(i).getKeys().getPosition());
-                session.save(result.get(i));
+                session.save(result.get(i));;
                 if (i % 20 == 0) {
                     session.flush();
                     session.clear();
@@ -38,7 +38,7 @@ public class HafpisFptlCandDao {
             log.error("insert cands error. ", e);
             tx.rollback();
         } finally {
-            session.close();
+            HibernateSessionFactoryUtil.closeSession();;
         }
     }
 
@@ -55,7 +55,7 @@ public class HafpisFptlCandDao {
             log.error("delete cands error.", e);
             tx.rollback();
         } finally {
-            session.close();
+            HibernateSessionFactoryUtil.closeSession();;
         }
     }
 }

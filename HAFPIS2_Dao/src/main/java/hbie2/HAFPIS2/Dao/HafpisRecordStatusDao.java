@@ -40,56 +40,20 @@ public class HafpisRecordStatusDao {
             tx.rollback();
             return false;
         } finally {
-            session.close();
+            HibernateSessionFactoryUtil.closeSession();;
         }
     }
 
-    public void resetStatus(String newStatus, String oriStatus) {
-        Session session = HibernateSessionFactoryUtil.getSession();
-        Transaction tx = session.getTransaction();
-        try {
-            tx.begin();
-            String hql = "update HafpisRecordStatus matc set matc.status=:newStatus where matc.status=:oriStatus";
-            int resetCnt = session.createQuery(hql).setParameter("newStatus", newStatus).setParameter("oriStatus", oriStatus).executeUpdate();
-            log.debug("Reset status finish. Total {}", resetCnt);
-            tx.commit();
-        } catch (Exception e) {
-            log.error("Error: ", e);
-            tx.rollback();
-        } finally {
-            session.close();
-        }
-    }
-
-    public void resetStatus(String newStatus, String oriStatus, int datatype, int tasktype) {
-        Session session = HibernateSessionFactoryUtil.getSession();
-        Transaction tx = session.getTransaction();
-        try {
-            tx.begin();
-            String hql = "update HafpisRecordStatus matc set matc.status=:newStatus where matc.status=:oriStatus and " +
-                    "matc.datatype=:datatype and matc.tasktype=:tasktype";
-            int resetCnt = session.createQuery(hql).setParameter("newStatus", newStatus)
-                    .setParameter("oriStatus", oriStatus).setParameter("datatype", datatype)
-                    .setParameter("tasktype", tasktype).executeUpdate();
-            log.debug("Reset status finish: Total/Datatype/Tasktype: {} / {] / {}", resetCnt, datatype, tasktype);
-            tx.commit();
-        } catch (Exception e) {
-            log.error("Error: ", e);
-            tx.rollback();
-        } finally {
-            session.close();
-        }
-    }
 
     public boolean update(HafpisRecordStatus task) {
         Session session = HibernateSessionFactoryUtil.getSession();
         Transaction tx = session.getTransaction();
         try {
             tx.begin();
-            String hql = "update HafpisRecordStatus matc set matc.status=:status, matc.nistpath=:nistpath where matc.probeid=:probeid";
+            String hql = "update HafpisRecordStatus matc set matc.status=:status, matc.nistpath=:nistpath where key=:key";
             int updateCnt = session.createQuery(hql).setParameter("status", task.getStatus())
                     .setParameter("nistpath", task.getNistpath())
-                    .setParameter("probeid", task.getKey().getProbeid())
+                    .setParameter("key", task.getKey())
                     .executeUpdate();
             tx.commit();
             return updateCnt == 1;
@@ -98,7 +62,7 @@ public class HafpisRecordStatusDao {
             tx.rollback();
             return false;
         } finally {
-            session.close();
+            HibernateSessionFactoryUtil.closeSession();;
         }
     }
 
@@ -113,7 +77,7 @@ public class HafpisRecordStatusDao {
             tx.rollback();
             log.error("Error: ", e);
         } finally {
-            session.close();
+            HibernateSessionFactoryUtil.closeSession();;
         }
     }
 }

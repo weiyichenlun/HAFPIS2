@@ -15,7 +15,7 @@ public class HafpisHtppKeyDao {
     public HafpisHtppKey get(String personid) {
         Session session = HibernateSessionFactoryUtil.getSession();
         HafpisHtppKey htppKey = session.get(HafpisHtppKey.class, personid);
-        session.close();
+        HibernateSessionFactoryUtil.closeSession();;
         return htppKey;
     }
 }
