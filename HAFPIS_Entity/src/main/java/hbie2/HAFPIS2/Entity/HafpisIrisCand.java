@@ -6,7 +6,7 @@ package hbie2.HAFPIS2.Entity;
  * 创建时间:2018/3/28
  * 最后修改时间:2018/3/28
  */
-public class HafpisIrisCand {
+public class HafpisIrisCand extends AbstractBean<HafpisIrisCand>{
     private TTCompositeKeys keys;
     private String transno;
     private String probeid;
@@ -110,5 +110,10 @@ public class HafpisIrisCand {
         result = 31 * result + (score01 != null ? score01.hashCode() : 0);
         result = 31 * result + (score02 != null ? score02.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public int compareTo(HafpisIrisCand o) {
+        return this.score > o.score ? -1 : (this.score < o.score ? 1 : 0);
     }
 }

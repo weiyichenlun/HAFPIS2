@@ -42,6 +42,16 @@ public class HafpisFpllCandDao {
         }
     }
 
+    public void insert(List<HafpisFpllCand> result, Session session) {
+        for (int i = 0; i < result.size(); i++) {
+            session.saveOrUpdate(result.get(0));
+            if (i % 20 == 0 && i > 0) {
+                session.flush();
+                session.clear();
+            }
+        }
+    }
+
     public void delete(String taskidd) {
         Session session = HibernateSessionFactoryUtil.getSession();
         Transaction tx = session.getTransaction();

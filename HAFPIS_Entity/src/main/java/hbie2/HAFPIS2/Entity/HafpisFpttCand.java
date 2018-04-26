@@ -309,4 +309,10 @@ public class HafpisFpttCand extends AbstractBean<HafpisFpttCand>{
         result = 31 * result + (score20 != null ? score20.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public int compareTo(HafpisFpttCand o) {
+        return this.score > o.score ? -1 : (this.score < o.score ? 1 : 0);
+    }
+
 }

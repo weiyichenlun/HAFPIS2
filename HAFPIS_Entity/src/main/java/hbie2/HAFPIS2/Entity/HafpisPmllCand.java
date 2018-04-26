@@ -6,7 +6,7 @@ package hbie2.HAFPIS2.Entity;
  * 创建时间:2018/3/28
  * 最后修改时间:2018/3/28
  */
-public class HafpisPmllCand {
+public class HafpisPmllCand extends AbstractBean<HafpisPmllCand>{
     private OtherCompositeKeys keys;
     private String transno;
     private String probeid;
@@ -88,5 +88,10 @@ public class HafpisPmllCand {
         result = 31 * result + (candrank != null ? candrank.hashCode() : 0);
         result = 31 * result + (score != null ? score.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public int compareTo(HafpisPmllCand o) {
+        return this.score > o.score ? -1 : (this.score < o.score ? 1 : 0);
     }
 }

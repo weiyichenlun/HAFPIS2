@@ -361,7 +361,7 @@ public class HafpisFPTLService extends AbstractService implements Runnable {
                     updateSrchOnly(srchTask);
                 }
             } else {
-                log.error("Get HBIE client null. Suspenging until HBIE is started..");
+                log.error("Get HBIE client null. Suspending until HBIE is started..");
                 log.info("waiting FPTL client...");
                 srchTask.setStatus(CONSTANTS.WAIT_STATUS);
 //                srchTaskDao.update(srchTask);
@@ -435,12 +435,12 @@ public class HafpisFPTLService extends AbstractService implements Runnable {
 //                    srchTaskDao.update(srchTask);
                     updateSrchOnly(srchTask);
                 } else {
-                    log.info("get srchtask: [}", srchTask.getTaskidd());
+                    log.info("get srchtask: {}", srchTask.getTaskidd());
                     CommonUtils.convert(srchTask);
                     if (CommonUtils.check(srchTask)) {
                         log.error("Convert srchdata error. taskidd: {}", srchTask.getTaskidd());
                         srchTask.setStatus(CONSTANTS.ERROR_STATUS);
-                        srchTask.setExptmsg("conver srchdata error");
+                        srchTask.setExptmsg("convert srchdata error");
 //                        srchTaskDao.update(srchTask);
                         updateSrchOnly(srchTask);
                     } else {
@@ -451,13 +451,15 @@ public class HafpisFPTLService extends AbstractService implements Runnable {
                 }
             } catch (InterruptedException e) {
                 log.info("Take srchtask from queue error. ", e);
+                CommonUtils.sleep(100);
             }
         }
     }
 
     private void updateSrchOnly(HafpisSrchTask srchTask) {
         Transaction tx = null;
-        try (Session session = HibernateSessionFactoryUtil.getSession()) {
+        Session session = HibernateSessionFactoryUtil.getSession();
+        try {
             tx = session.getTransaction();
             tx.begin();
             srchTaskDao.update(srchTask, session);
@@ -467,15 +469,27 @@ public class HafpisFPTLService extends AbstractService implements Runnable {
             if (tx != null) {
                 tx.rollback();
             }
+        } finally {
+            HibernateSessionFactoryUtil.closeSession();
         }
     }
 
     private void updateSrchAndFPTL(HafpisSrchTask srchTask, List<HafpisFptlCand> fptlCands) {
         Transaction tx = null;
-        try (Session session = HibernateSessionFactoryUtil.getSession()) {
+        Session session = HibernateSessionFactoryUtil.getSession();
+        try {
             tx = session.getTransaction();
             tx.begin();
-
+            srchTaskDao.update(srchTask, session);
+            fptlDao.insert(fptlCands, session);
+            tx.commit();
+        } catch (Exception e) {
+            log.error("Update srchtask and fptl cand error. ", e);
+            if (tx != null) {
+                tx.rollback();
+            }
+        } finally {
+            HibernateSessionFactoryUtil.closeSession();
         }
     }
 }

@@ -6,7 +6,7 @@ package hbie2.HAFPIS2.Entity;
  * 创建时间:2018/3/28
  * 最后修改时间:2018/3/28
  */
-public class HafpisFaceCand {
+public class HafpisFaceCand extends AbstractBean<HafpisFaceCand>{
     private TTCompositeKeys keys;
     private String transno;
     private String probeid;
@@ -99,4 +99,10 @@ public class HafpisFaceCand {
         result = 31 * result + (score01 != null ? score01.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public int compareTo(HafpisFaceCand o) {
+        return this.score > o.score ? -1 : (this.score < o.score ? 1 : 0);
+    }
+
 }
