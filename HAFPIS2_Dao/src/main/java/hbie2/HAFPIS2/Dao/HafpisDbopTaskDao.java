@@ -42,6 +42,17 @@ public class HafpisDbopTaskDao {
         return list;
     }
 
+    public HafpisDbopTask select(String taskidd) {
+        Session session = HibernateSessionFactoryUtil.getSession();
+        HafpisDbopTask dbopTask = session.get(HafpisDbopTask.class, taskidd);
+        HibernateSessionFactoryUtil.closeSession();
+        return dbopTask;
+    }
+
+    public void insert(HafpisDbopTask dbopTask, Session session) {
+        session.save(dbopTask);
+    }
+
     public boolean update(String taskidd, int status) {
         Session session = HibernateSessionFactoryUtil.getSession();
         session.beginTransaction();

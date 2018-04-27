@@ -9,6 +9,7 @@ import hbie2.HAFPIS2.Entity.SrchDataBean;
 import hbie2.HAFPIS2.Service.AbstractService;
 import hbie2.HAFPIS2.Utils.CONSTANTS;
 import hbie2.HAFPIS2.Utils.CommonUtils;
+import hbie2.HAFPIS2.Utils.ConfigUtils;
 import hbie2.HAFPIS2.Utils.HbieUtils;
 import hbie2.HAFPIS2.Utils.HibernateSessionFactoryUtil;
 import hbie2.TaskSearch;
@@ -41,31 +42,39 @@ public class HafpisFPTLService extends AbstractService implements Runnable {
     @Override
     public void init(Properties cfg) {
         try {
-            this.status = Integer.parseInt(cfg.getProperty("status"));
+            this.status = Integer.parseInt(cfg.getProperty("status", "3"));
         } catch (NumberFormatException e) {
             log.error("status: {} config error, must be a number. Use default status: 3 ", cfg.getProperty("status"), e);
             this.status = 3;
         }
         try {
-            this.querynum = Integer.parseInt(cfg.getProperty("querynum"));
+            this.querynum = Integer.parseInt(cfg.getProperty("querynum", "10"));
 
         } catch (NumberFormatException e) {
             log.error("querynum: {} config error, must be a number. Use default querynum: 10", cfg.getProperty("querynum"), e);
             this.querynum = 10;
         }
         try {
-            this.interval = Integer.parseInt(cfg.getProperty("interval"));
+            this.interval = Integer.parseInt(cfg.getProperty("interval", "1"));
 
         } catch (NumberFormatException e) {
             log.error("interval: {} config error, must be a number. Use default interval: 1", cfg.getProperty("interval"), e);
             this.interval = 1;
         }
         try {
-            this.FPTL_Threshold = Integer.parseInt(cfg.getProperty("FPTL_Threshold"));
+            this.FPTL_Threshold = Integer.parseInt(cfg.getProperty("FPTL_Threshold", "0"));
         } catch (NumberFormatException e) {
             log.error("FPTL_Threshold: {} config error, must be an Integer. Use default value: 0", cfg.getProperty("FPTL_Threshold"));
             this.FPTL_Threshold = 0;
         }
+
+        try {
+            this.thread_num = Integer.parseInt(ConfigUtils.getConfigOrDefault("latfp_thread_num", "1"));
+        } catch (NumberFormatException e) {
+            log.error("threadnum: {} config error, must be an Integer. Use default value: 1", cfg.getProperty("threadnum"));
+            this.thread_num = 1;
+        }
+
         srchTaskDao = new HafpisSrchTaskDao();
         fptlDao = new HafpisFptlCandDao();
         srchTaskQueue = new ArrayBlockingQueue<>(CONSTANTS.FPTL_LIMIT);
@@ -386,10 +395,10 @@ public class HafpisFPTLService extends AbstractService implements Runnable {
         new Thread(() -> {
             log.info("FPTL_SRCHTASKQUEUE_THREAD start...");
             while (true) {
-                List<HafpisSrchTask> list = srchTaskDao.getSrchTasks(CONSTANTS.URGENT_STATUS, CONSTANTS.SRCH_DATATYPE_LPP,
+                List<HafpisSrchTask> list = srchTaskDao.getSrchTasks(CONSTANTS.URGENT_STATUS, CONSTANTS.SRCH_DATATYPE_TP,
                         CONSTANTS.SRCH_TASKTYPE_TL, querynum);
                 if (null == list || list.size() == 0) {
-                    list = srchTaskDao.getSrchTasks(CONSTANTS.WAIT_STATUS, CONSTANTS.SRCH_DATATYPE_LPP, CONSTANTS.SRCH_TASKTYPE_TL, querynum);
+                    list = srchTaskDao.getSrchTasks(CONSTANTS.WAIT_STATUS, CONSTANTS.SRCH_DATATYPE_TP, CONSTANTS.SRCH_TASKTYPE_TL, querynum);
                     if (null == list || list.size() == 0) {
                         CommonUtils.sleep(interval * 1000);
                     } else {
@@ -419,7 +428,9 @@ public class HafpisFPTLService extends AbstractService implements Runnable {
             }
         }, "FPTL_SRCHTASKQUEUE_THREAD").start();
 
-        new Thread(this::FPTL, "FPTL_SEARCH_THREAD").start();
+        for (int i = 0; i < this.thread_num; i++) {
+            new Thread(this::FPTL, "FPTL_SEARCH_THREAD").start();
+        }
     }
 
     private void FPTL() {

@@ -58,6 +58,11 @@ public class ConfigUtils {
         return props.getProperty(key);
     }
 
+    public static synchronized String getConfigOrDefault(String key, String defaultValue) {
+        String value = getConfig(key);
+        return value == null ? defaultValue : value;
+    }
+
     public static synchronized String getConfig(String configFileName, String key) {
         URL url = ConfigUtils.class.getResource(configFileName);
         if (url == null) {

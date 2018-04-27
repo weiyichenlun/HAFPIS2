@@ -14,6 +14,7 @@ public abstract class AbstractService implements Runnable {
     public int interval;
     public int querynum;
     public int status;
+    public int thread_num;
     public String tablename;
     public int[] tasktypes = new int[2];
     public int[] datatypes = new int[2];

@@ -218,7 +218,7 @@ public class Utils {
         if (rs == null) return null;
         try {
             if (rs.next()) {
-                String id = rs.getString("probeid");
+                String id = rs.getString("pid");
                 log.info("id is {}", id);
                 key.setProbeid(id);
                 key.setDatatype(rs.getInt("datatype"));
