@@ -196,12 +196,19 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
                     record.setId(probeid);
                     record.setCreateTime(Utils.getDateFromStr(recordStatus.getCreatetime()));
                     String path = recordStatus.getNistpath();
+                    String filepath = null;
+                    if (path.startsWith("/")) {
+                        filepath = path + "/";
+                    } else {
+                        filepath = "./";
+                    }
+                    log.debug("filepath is ", filepath);
                     String filename = is_fp ? probeid.substring(0, probeid.length() - 1) : probeid;
                     log.debug("Path: {} filename: {}", path, filename);
 //                    Map<Integer, List<NistImg>> nistImgMap = Utils.initFtpAndLoadNist(this.ftp_host, this.ftp_port,
 //                            this.ftp_usr, this.ftp_pwd, path, filename);
                     Map<Integer, List<NistImg>> nistImgMap = Utils.initFtpAndLoadNistByURL(this.ftp_host, this.ftp_port,
-                            this.ftp_usr, this.ftp_pwd, path + "/" + filename + ".nist");
+                            this.ftp_usr, this.ftp_pwd, filepath + filename + ".nist");
                     if (is_fp) {
                         List<NistImg> fp_list = nistImgMap.get(16); //type 16: flat image
                         if (fp_list == null || fp_list.size() == 0) {

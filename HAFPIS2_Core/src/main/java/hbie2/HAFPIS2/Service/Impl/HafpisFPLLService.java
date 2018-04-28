@@ -110,7 +110,7 @@ public class HafpisFPLLService extends AbstractService implements Runnable {
                     String filter = CommonUtils.mergeFilters(dbsFilter, solveOrDupFilter, demoFilter);
                     taskSearch.setFilter(filter);
                     log.debug("Total filter is {}", filter);
-                    taskSearch.setFilter(filter);
+                    taskSearch.setFeature(feature);
 
                     // search
                     String uid = HbieUtils.getInstance().hbie_LPP.submitSearch(taskSearch);

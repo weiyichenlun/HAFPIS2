@@ -218,7 +218,7 @@ public class LatFpMasterDaoJDBC implements MasterDAO, Serializable {
         try (Connection conn = this.queryRunner.getDataSource().getConnection()){
             conn.setAutoCommit(false);
             String sql = "select * from (select * from HAFPIS_RECORD_STATUS where status=? and datatype=? " +
-                    "order by probeid asc, createtime asc) where rownum <= 1";
+                    "order by pid asc, createtime asc) where rownum <= 1";
             ps = conn.prepareStatement(sql);
             ps.setString(1, Record.Status.Trained.name());
             ps.setInt(2, CONSTANTS.RECORD_DATATYPE_LPP);
@@ -265,7 +265,7 @@ public class LatFpMasterDaoJDBC implements MasterDAO, Serializable {
 
     @Override
     public void finishRecord(String id) {
-        String sql = "update HAFPIS_RECORD_STATUS set status=? where probeid=? and datatype=? and status=?";
+        String sql = "update HAFPIS_RECORD_STATUS set status=? where pid=? and datatype=? and status=?";
         try {
             this.queryRunner.update(sql, Record.Status.Done.name(), id, CONSTANTS.RECORD_DATATYPE_LPP,
                     Record.Status.Publishing.name());

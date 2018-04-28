@@ -182,11 +182,18 @@ public class LatFpMatcherDaoJDBC implements MatcherDAO{
                     record.setId(probeid);
                     record.setCreateTime(Utils.getDateFromStr(recordStatus.getCreatetime()));
                     String path = recordStatus.getNistpath();
+                    String filepath = null;
+                    if (path.startsWith("/")) {
+                        filepath = path + "/";
+                    } else {
+                        filepath = "./";
+                    }
+                    log.debug("filepath is ", filepath);
                     log.debug("Path: {} filename: {}", path, probeid);
 //                    Map<Integer, List<NistImg>> nistImgMap = Utils.initFtpAndLoadNist(this.ftp_host, this.ftp_port,
 //                            this.ftp_usr, this.ftp_pwd, path, filename);
                     Map<Integer, List<NistImg>> nistImgMap = Utils.initFtpAndLoadNistByURL(this.ftp_host, this.ftp_port,
-                            this.ftp_usr, this.ftp_pwd, path + "/" + probeid + ".nist");
+                            this.ftp_usr, this.ftp_pwd, filepath + probeid + ".nist");
 
                     List<NistImg> latfp_list = nistImgMap.get(13); //type 13: latfp
                     if (latfp_list == null || latfp_list.size() == 0) {
@@ -317,7 +324,7 @@ public class LatFpMatcherDaoJDBC implements MatcherDAO{
         try (Connection conn = this.queryRunner.getDataSource().getConnection()) {
             conn.setAutoCommit(false);
             String sql = "select * from (select * from HAFPIS_RECORD_STATUS where status=? and datatype=? order by " +
-                    "create_time) where rownum <= 1";
+                    "createtime) where rownum <= 1";
             ps = conn.prepareStatement(sql);
             ps.setString(1, Record.Status.Processed.name());
             ps.setInt(2, CONSTANTS.RECORD_DATATYPE_LPP);

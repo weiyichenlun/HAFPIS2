@@ -84,7 +84,7 @@ public class HafpisFPTLService extends AbstractService implements Runnable {
     public <T> void doWork(List<T> list) {
         HafpisSrchTask srchTask = (HafpisSrchTask) list.get(0);
         SrchDataBean srchDataBean = srchTask.getSrchDataBeans().get(0);
-        String srchPosMask = CommonUtils.checkSrchPosMask(CONSTANTS.SRCH_DATATYPE_LPP, srchTask.getSrchposmask());
+        String srchPosMask = CommonUtils.checkSrchPosMask(CONSTANTS.SRCH_DATATYPE_TP, srchTask.getSrchposmask());
         String taskidd = srchTask.getTaskidd();
         int[] rpPosMask = new int[10];
         int[] fpPosMask = new int[10];
