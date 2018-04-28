@@ -1,5 +1,6 @@
 package hbie2.HAFPIS2.Entity;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -28,7 +29,7 @@ public class HafpisSrchTask {
     private String begtime;
     private String endtime;
     private String exptmsg;
-    private List<SrchDataBean> srchDataBeans;
+    private List<SrchDataBean> srchDataBeans = new ArrayList<>();
 
     public List<SrchDataBean> getSrchDataBeans() {
         return srchDataBeans;

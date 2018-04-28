@@ -281,9 +281,9 @@ public class HafpisFPLTService extends AbstractService implements Runnable {
                                 OtherCompositeKeys keys = new OtherCompositeKeys();
                                 keys.setTaskidd(taskidd);
                                 keys.setCandid(candidate.getId());
-                                keys.setPosition(candidate.getFp());
+                                keys.setPosition(candidate.getFp() + 1);
                                 fpltCand.setKeys(keys);
-                                fpltCand.setTransno(srchTask.getTransno() + 1);
+                                fpltCand.setTransno(srchTask.getTransno());
                                 fpltCand.setProbeid(srchTask.getProbeid());
                                 fpltCand.setDbid((Integer) candidate.getFields().get("dbid"));
                                 fpltCand.setScore(candidate.getScore());
@@ -328,9 +328,9 @@ public class HafpisFPLTService extends AbstractService implements Runnable {
                                     OtherCompositeKeys keys = new OtherCompositeKeys();
                                     keys.setTaskidd(taskidd);
                                     keys.setCandid(candidate.getId());
-                                    keys.setPosition(candidate.getFp());
+                                    keys.setPosition(candidate.getFp() + 11);
                                     fpltCand.setKeys(keys);
-                                    fpltCand.setTransno(srchTask.getTransno() + 11);
+                                    fpltCand.setTransno(srchTask.getTransno());
                                     fpltCand.setProbeid(srchTask.getProbeid());
                                     fpltCand.setDbid((Integer) candidate.getFields().get("dbid"));
                                     fpltCand.setScore(candidate.getScore());

@@ -193,7 +193,7 @@ public class CommonUtils {
                             if (temp.RpMntLen[i] == 0) {
                                 temp.rpmnt[i] = null;
                             } else {
-                                byte[] tempFea = new byte[temp.RpMntLen[i] * 2];
+                                byte[] tempFea = new byte[3072 * 2];
                                 byte[] fea = new byte[3072];
                                 dis.readFully(fea);
                                 System.arraycopy(fea, 0, tempFea, 0, fea.length);
@@ -212,7 +212,7 @@ public class CommonUtils {
                             if (temp.FpMntLen[i] == 0) {
                                 temp.fpmnt[i] = null;
                             } else {
-                                byte[] tempFea = new byte[temp.FpMntLen[i] * 2];
+                                byte[] tempFea = new byte[3072 * 2];
                                 byte[] fea = new byte[3072];
                                 dis.readFully(fea);
                                 System.arraycopy(fea, 0, tempFea, 0, fea.length);
@@ -220,7 +220,6 @@ public class CommonUtils {
                                 temp.fpmnt[i] = tempFea;
                                 temp.fpmntnum++;
                                 len -= temp.FpMntLen[i];
-
 //                                dis.readFully(tempFea);
 //                                temp.fpmnt[i] = tempFea;
 //                                temp.fpmntnum++;

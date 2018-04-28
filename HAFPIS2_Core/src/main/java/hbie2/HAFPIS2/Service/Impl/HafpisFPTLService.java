@@ -91,7 +91,7 @@ public class HafpisFPTLService extends AbstractService implements Runnable {
         int numOf1 = 0;
 
         int avgCand = srchTask.getAveragecand();
-        if (srchDataBean.rpmntnum == 0 || srchDataBean.fpmntnum == 0) {
+        if (srchDataBean.rpmntnum == 0 && srchDataBean.fpmntnum == 0) {
             log.error("both rpmnt and fpmnt are null. taskidd: {}", srchTask.getTaskidd());
             srchTask.setStatus(CONSTANTS.ERROR_STATUS);
             srchTask.setExptmsg("rpmnt and fpmnt are both null");

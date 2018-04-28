@@ -137,6 +137,11 @@ public class SrchDataBean implements Externalizable {
         if (latpalmmnt != null && latpalmmnt.length > 0) {
             out.write(latpalmmnt);
         }
+        out.write(rpmntnum);
+        out.write(fpmntnum);
+        out.write(palmmntnum);
+        out.write(facemntnum);
+        out.write(irismntnum);
         out.flush();
     }
 
@@ -189,5 +194,10 @@ public class SrchDataBean implements Externalizable {
         }
         in.readFully(latfpmnt);
         in.readFully(latpalmmnt);
+        rpmntnum = in.readInt();
+        fpmntnum = in.readInt();
+        palmmntnum = in.readInt();
+        facemntnum = in.readInt();
+        irismntnum = in.readInt();
     }
 }
