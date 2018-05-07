@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -81,7 +80,7 @@ public class HafpisDbopLppService extends AbstractService implements Runnable {
         imgdbCapsDao = new HafpisImgdbCapsDao();
         recordStatusDao = new HafpisRecordStatusDao();
         dbopTaskQueue = new ArrayBlockingQueue<>(CONSTANTS.DBOP_LPP_LIMIT);
-        executorService = Executors.newFixedThreadPool(CONSTANTS.NCORES > 8 ? 8 : CONSTANTS.NCORES);    }
+    }
 
     @Override
     public <T> void doWork(List<T> list) {
@@ -222,7 +221,6 @@ public class HafpisDbopLppService extends AbstractService implements Runnable {
                 executorService.awaitTermination(3, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
             }
-            executorService.shutdown();
             dbopTaskDao.updateStatus(CONSTANTS.DBOP_LPP);
             log.info("DbopLpp executorservice is shutting down");
         }));

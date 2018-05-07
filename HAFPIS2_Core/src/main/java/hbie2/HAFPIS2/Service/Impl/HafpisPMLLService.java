@@ -1,9 +1,9 @@
 package hbie2.HAFPIS2.Service.Impl;
 
 import hbie2.Candidate;
-import hbie2.HAFPIS2.Dao.HafpisFpllCandDao;
+import hbie2.HAFPIS2.Dao.HafpisPmllCandDao;
 import hbie2.HAFPIS2.Dao.HafpisSrchTaskDao;
-import hbie2.HAFPIS2.Entity.HafpisFpllCand;
+import hbie2.HAFPIS2.Entity.HafpisPmllCand;
 import hbie2.HAFPIS2.Entity.HafpisSrchTask;
 import hbie2.HAFPIS2.Entity.SrchDataBean;
 import hbie2.HAFPIS2.Service.AbstractService;
@@ -29,15 +29,15 @@ import java.util.concurrent.ArrayBlockingQueue;
 /**
  * 描述：
  * 作者：ZP
- * 创建时间:2018/4/25
- * 最后修改时间:2018/4/25
+ * 创建时间:2018/5/2
+ * 最后修改时间:2018/5/2
  */
-public class HafpisFPLLService extends AbstractService implements Runnable {
-    private Logger log = LoggerFactory.getLogger(HafpisFPLLService.class);
+public class HafpisPMLLService extends AbstractService implements Runnable {
+    private Logger log = LoggerFactory.getLogger(HafpisPMLLService.class);
     private HafpisSrchTaskDao srchTaskDao;
-    private HafpisFpllCandDao fpllDao;
+    private HafpisPmllCandDao pmllDao;
     private ArrayBlockingQueue<HafpisSrchTask> srchTaskQueue;
-    private int FPLL_Threshold;
+    private int PMLL_Threshold;
 
     @Override
     public void init(Properties cfg) {
@@ -62,22 +62,22 @@ public class HafpisFPLLService extends AbstractService implements Runnable {
             this.interval = 1;
         }
         try {
-            this.FPLL_Threshold = Integer.parseInt(cfg.getProperty("FPLL_Threshold", "0"));
+            this.PMLL_Threshold = Integer.parseInt(cfg.getProperty("PMLL_Threshold", "0"));
         } catch (NumberFormatException e) {
-            log.error("FPLL_Threshold: {} config error, must be an Integer. Use default value: 0", cfg.getProperty("FPLL_Threshold"));
-            this.FPLL_Threshold = 0;
+            log.error("PMLL_Threshold: {} config error, must be an Integer. Use default value: 0", cfg.getProperty("PMLL_Threshold"));
+            this.PMLL_Threshold = 0;
         }
 
         try {
-            this.thread_num = Integer.parseInt(ConfigUtils.getConfigOrDefault("latfp_thread_num", "1"));
+            this.thread_num = Integer.parseInt(ConfigUtils.getConfigOrDefault("latpalm_thread_num", "1"));
         } catch (NumberFormatException e) {
-            log.error("threadnum: {} config error, must be an Integer. Use default value: 1", ConfigUtils.getConfig("latfp_thread_num"));
+            log.error("threadnum: {} config error, must be an Integer. Use default value: 1", ConfigUtils.getConfig("latpalm_thread_num"));
             this.thread_num = 1;
         }
 
         srchTaskDao = new HafpisSrchTaskDao();
-        fpllDao = new HafpisFpllCandDao();
-        srchTaskQueue = new ArrayBlockingQueue<>(CONSTANTS.FPLL_LIMIT);
+        pmllDao = new HafpisPmllCandDao();
+        srchTaskQueue = new ArrayBlockingQueue<>(CONSTANTS.PPLL_LIMIT);
     }
 
     @Override
@@ -85,44 +85,43 @@ public class HafpisFPLLService extends AbstractService implements Runnable {
         HafpisSrchTask srchTask = (HafpisSrchTask) list.get(0);
         SrchDataBean srchDataBean = srchTask.getSrchDataBeans().get(0);
         String taskidd = srchTask.getTaskidd();
-        byte[] feature = srchDataBean.latfpmnt;
+        byte[] feature = srchDataBean.latpalmmnt;
         if (feature == null || feature.length == 0) {
-            log.error("latfpmnt is null. taskidd: {}", taskidd);
+            log.error("latpalmmnt is null. taskidd: {}", taskidd);
             srchTask.setStatus(CONSTANTS.ERROR_STATUS);
-            srchTask.setExptmsg("latfpmnt is null");
+            srchTask.setExptmsg("latpalmmnt is null");
             updateSrchOnly(srchTask);
         } else {
-            if (HbieUtils.getInstance().hbie_LPP != null) {
+            if (HbieUtils.getInstance().hbie_PLP != null) {
                 try {
                     TaskSearch taskSearch = new TaskSearch();
-                    Map<String, HafpisFpllCand> fpllCandMap = new HashMap<>();
-                    List<HafpisFpllCand> rest = new ArrayList<>();
+                    Map<String, HafpisPmllCand> pmllCandMap = new HashMap<>();
                     int numOfCand = srchTask.getNumofcand();
                     numOfCand = numOfCand > 0 ? (int) (numOfCand * 1.5) : CONSTANTS.MAXCANDS;
                     taskSearch.setId(taskidd);
-                    taskSearch.setType("LL");
-                    taskSearch.setScoreThreshold(FPLL_Threshold);
+                    taskSearch.setType("L2L");
+                    taskSearch.setScoreThreshold(PMLL_Threshold);
 
-                    // set filters
+                    //set filters
                     String dbsFilter = CommonUtils.getDbsFilter(srchTask.getSrchdbsmask());
-                    String solveOrDupFilter = CommonUtils.getSolveOrDupFilter(CONSTANTS.DBOP_LPP, srchTask.getSolveordup());
+                    String sovleOrDupFilter = CommonUtils.getSolveOrDupFilter(CONSTANTS.DBOP_PLP, srchTask.getSolveordup());
                     String demoFilter = CommonUtils.getDemoFilter(srchTask.getDemofilter());
-                    String filter = CommonUtils.mergeFilters(dbsFilter, solveOrDupFilter, demoFilter);
+                    String filter = CommonUtils.mergeFilters(dbsFilter, sovleOrDupFilter, demoFilter);
                     taskSearch.setFilter(filter);
                     log.debug("Total filter is {}", filter);
                     taskSearch.setFeature(feature);
 
                     // search
-                    String uid = HbieUtils.getInstance().hbie_LPP.submitSearch(taskSearch);
+                    String uid = HbieUtils.getInstance().hbie_PLP.submitSearch(taskSearch);
                     while (true) {
-                        TaskSearch task = HbieUtils.getInstance().hbie_LPP.querySearch(uid);
+                        TaskSearch task = HbieUtils.getInstance().hbie_PLP.querySearch(uid);
                         if (task == null) {
-                            log.warn("FPLL: Impossible. taskidd: {}, uid: {}", taskidd, uid);
+                            log.warn("PMLL: Impossible. taskidd/uid: {}/{}", taskidd, uid);
                             srchTask.setStatus(CONSTANTS.WAIT_STATUS);
                             updateSrchOnly(srchTask);
                             break;
                         } else if (task.getStatus() == TaskSearch.Status.Error) {
-                            log.error("FPLL search error. taskidd: {}, uid: {}", taskidd, uid);
+                            log.error("PMLL search error. taskidd/uid: {}/{}", taskidd, uid);
                             srchTask.setStatus(CONSTANTS.ERROR_STATUS);
                             srchTask.setExptmsg(task.getMsg());
                             updateSrchOnly(srchTask);
@@ -135,58 +134,58 @@ public class HafpisFPLLService extends AbstractService implements Runnable {
                         for (int i = 0; i < candidates.size(); i++) {
                             Candidate candidate = candidates.get(i);
                             String candid = candidate.getId();
-                            HafpisFpllCand fpllCand = fpllCandMap.get(candid);
-                            if (fpllCand == null) {
-                                fpllCand = new HafpisFpllCand();
-                                fpllCand.getKeys().setTaskidd(taskidd);
-                                fpllCand.getKeys().setCandid(candid);
-                                fpllCand.getKeys().setPosition(1);
-                                fpllCand.setDbid((Integer) candidate.getFields().get("dbid"));
-                                fpllCand.setScore(candidate.getScore());
-                                fpllCand.setTransno(srchTask.getTransno());
-                                fpllCand.setProbeid(srchTask.getProbeid());
+                            HafpisPmllCand pmllCand = pmllCandMap.get(candid);
+                            if (pmllCand == null) {
+                                pmllCand = new HafpisPmllCand();
+                                pmllCand.getKeys().setTaskidd(taskidd);
+                                pmllCand.getKeys().setCandid(candid);
+                                pmllCand.getKeys().setPosition(1);
+                                pmllCand.setDbid((Integer) candidate.getFields().get("dbid"));
+                                pmllCand.setScore(candidate.getScore());
+                                pmllCand.setTransno(srchTask.getTransno());
+                                pmllCand.setProbeid(srchTask.getProbeid());
                             } else {
-                                if (candidate.getScore() > fpllCand.getScore()) {
-                                    fpllCand.setScore(candidate.getScore());
+                                if (candidate.getScore() > pmllCand.getScore()) {
+                                    pmllCand.setScore(candidate.getScore());
                                 }
                             }
-                            fpllCandMap.put(candid, fpllCand);
+                            pmllCandMap.put(candid, pmllCand);
                         }
                         break;
                     }
                     //insert into db
                     log.debug("begin to insert into table");
-                    if (fpllCandMap.size() == 0) {
-                        log.info("FPLL search finish. No results for taskidd {}", taskidd);
+                    if (pmllCandMap.size() == 0) {
+                        log.info("PMLL search finish. No results for taskidd {}", taskidd);
                         srchTask.setStatus(CONSTANTS.FINISH_NOMATCH_STATUS);
                         srchTask.setExptmsg("No results");
                         updateSrchOnly(srchTask);
                     } else {
-                        List<HafpisFpllCand> fpllCands = new ArrayList<>();
-                        fpllCands.addAll(fpllCandMap.values());
-                        if (fpllCands.size() >= numOfCand) {
-                            fpllCands = CommonUtils.getLimitedList(fpllCands, numOfCand);
+                        List<HafpisPmllCand> pmllCands = new ArrayList<>();
+                        pmllCands.addAll(pmllCandMap.values());
+                        if (pmllCands.size() >= numOfCand) {
+                            pmllCands = CommonUtils.getLimitedList(pmllCands, numOfCand);
                         } else {
-                            Collections.sort(fpllCands);
+                            Collections.sort(pmllCands);
                         }
 
                         //rank
-                        for (int i = 0; i < fpllCands.size(); i++) {
-                            fpllCands.get(i).setCandrank(i + 1);
+                        for (int i = 0; i < pmllCands.size(); i++) {
+                            pmllCands.get(i).setCandrank(i + 1);
                         }
                         log.debug("Inserting...");
                         srchTask.setStatus(CONSTANTS.FINISH_STATUS);
-                        updateSrchAndFPLL(srchTask, fpllCands);
+                        updateSrchAndPMLL(srchTask, pmllCands);
                         log.info("srchtask {} finish", taskidd);
                     }
                 } catch (Exception e) {
-                    log.error("Impossible. ", e);
+                    log.error("Impossible.", e);
                     srchTask.setStatus(CONSTANTS.WAIT_STATUS);
                     updateSrchOnly(srchTask);
                 }
             } else {
                 log.warn("Get HBIE client null. Suspending until HBIE is started.");
-                log.info("waiting FPLL client...");
+                log.info("waiting PMLL client...");
                 srchTask.setStatus(CONSTANTS.WAIT_STATUS);
                 updateSrchOnly(srchTask);
                 CommonUtils.sleep(interval * 1000);
@@ -197,22 +196,22 @@ public class HafpisFPLLService extends AbstractService implements Runnable {
     @Override
     public void run() {
         //add shutdown hook
-        Runtime.getRuntime().addShutdownHook(new Thread(() ->{
-            srchTaskDao.updateStatus(CONSTANTS.SRCH_DATATYPE_LPP, CONSTANTS.SRCH_TASKTYPE_LL);
-            log.info("FPLL is shutting down.");
+        Runtime.getRuntime().addShutdownHook(new Thread(()-> {
+            srchTaskDao.updateStatus(CONSTANTS.SRCH_DATATYPE_PLP, CONSTANTS.SRCH_TASKTYPE_LL);
+            log.info("PMLL is shutting down.");
         }));
 
-        log.info("FPLL service start. Update status first...");
-        srchTaskDao.updateStatus(CONSTANTS.SRCH_DATATYPE_LPP, CONSTANTS.SRCH_TASKTYPE_LL);
+        log.info("PMLL service start. Update status first...");
+        srchTaskDao.updateStatus(CONSTANTS.SRCH_DATATYPE_PLP, CONSTANTS.SRCH_TASKTYPE_LL);
 
         //Take SrchTask from db
-        new Thread(() -> {
-            log.info("FPLL_SRCHTASKQUEUE_THREAD start...");
+        new Thread(()-> {
+            log.info("PMLL_SRCHTASKQUEUE_THREAD start...");
             while (true) {
-                List<HafpisSrchTask> list = srchTaskDao.getSrchTasks(CONSTANTS.URGENT_STATUS, CONSTANTS.SRCH_DATATYPE_LPP,
+                List<HafpisSrchTask> list = srchTaskDao.getSrchTasks(CONSTANTS.URGENT_STATUS, CONSTANTS.SRCH_DATATYPE_PLP,
                         CONSTANTS.SRCH_TASKTYPE_LL, querynum);
                 if (null == list || list.size() == 0) {
-                    list = srchTaskDao.getSrchTasks(CONSTANTS.WAIT_STATUS, CONSTANTS.SRCH_DATATYPE_LPP, CONSTANTS.SRCH_TASKTYPE_LL,
+                    list = srchTaskDao.getSrchTasks(CONSTANTS.WAIT_STATUS, CONSTANTS.SRCH_DATATYPE_PLP, CONSTANTS.SRCH_TASKTYPE_LL,
                             querynum);
                     if (null == list || list.size() == 0) {
                         CommonUtils.sleep(interval * 1000);
@@ -223,7 +222,7 @@ public class HafpisFPLLService extends AbstractService implements Runnable {
                                 srchTask.setStatus(CONSTANTS.PROCESSING_STATUS);
                                 updateSrchOnly(srchTask);
                             } catch (InterruptedException e) {
-                                log.error("FPLL: put {} into srchtask queue error. ", srchTask.getTaskidd());
+                                log.error("PMLL: put {} into srchtask queue error.", srchTask.getTaskidd());
                             }
                         }
                     }
@@ -234,20 +233,20 @@ public class HafpisFPLLService extends AbstractService implements Runnable {
                             srchTask.setStatus(CONSTANTS.PROCESSING_STATUS);
                             updateSrchOnly(srchTask);
                         } catch (InterruptedException e) {
-                            log.error("FPLL: put urgetn {} into srchtask queue error.", e);
+                            log.error("PMLL: put urgent {} into srchtask queue error.", e);
                         }
                     }
                 }
             }
-        }, "FPLL_SRCHTASKQUEUE_THREAD").start();
+        }, "PMLL_SRCHTASKQUEUE_THREAD").start();
 
         for (int i = 0; i < this.thread_num; i++) {
-            new Thread(this::FPLL, "FPTL_SEARCH_THREAD").start();
+            new Thread(this::PMLL, "PMLL_SEARCH_THREAD").start();
         }
     }
 
-    private void FPLL() {
-        log.info("FPLL_SEARCH_THREAD start...");
+    private void PMLL() {
+        log.info("PMLL_SEARCH_THREAD start...");
         while (true) {
             HafpisSrchTask srchTask = null;
             try {
@@ -296,25 +295,22 @@ public class HafpisFPLLService extends AbstractService implements Runnable {
         }
     }
 
-    private void updateSrchAndFPLL(HafpisSrchTask srchTask, List<HafpisFpllCand> fpllCands) {
+    private void updateSrchAndPMLL(HafpisSrchTask srchTask, List<HafpisPmllCand> pmllCands) {
         Transaction tx = null;
         Session session = HibernateSessionFactoryUtil.getSession();
         try {
             tx = session.getTransaction();
             tx.begin();
             srchTaskDao.update(srchTask, session);
-            fpllDao.insert(fpllCands, session);
+            pmllDao.insert(pmllCands, session);
             tx.commit();
         } catch (Exception e) {
-            log.error("Update srchtask and fpll cand error.", e);
+            log.error("Update srchtask and pmll cand error.", e);
             if (tx != null) {
                 tx.rollback();
             }
         } finally {
             HibernateSessionFactoryUtil.closeSession();
         }
-
-
-
     }
 }

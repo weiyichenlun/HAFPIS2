@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -78,7 +77,7 @@ public class HafpisDbopPlpService extends AbstractService implements Runnable {
         imgdbCapsDao = new HafpisImgdbCapsDao();
         recordStatusDao = new HafpisRecordStatusDao();
         dbopTaskQueue = new ArrayBlockingQueue<>(CONSTANTS.DBOP_PLP_LIMIT);
-        executorService = Executors.newFixedThreadPool(CONSTANTS.NCORES > 8 ? 8 : CONSTANTS.NCORES);    }
+    }
 
     @Override
     public <T> void doWork(List<T> dbopTasks) {
@@ -219,7 +218,6 @@ public class HafpisDbopPlpService extends AbstractService implements Runnable {
                 executorService.awaitTermination(3, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
             }
-            executorService.shutdown();
             dbopTaskDao.updateStatus(CONSTANTS.DBOP_PLP);
             log.info("DbopPlp executorservice is shutting down");
         }));
@@ -233,6 +231,7 @@ public class HafpisDbopPlpService extends AbstractService implements Runnable {
             while (true) {
                 List<HafpisDbopTask> dbopTasks = dbopTaskDao.getDbopTasks(CONSTANTS.URGENT_STATUS, CONSTANTS.DBOP_PLP, querynum);
                 if (null == dbopTasks || dbopTasks.size() == 0) {
+                    dbopTasks = dbopTaskDao.getDbopTasks(status, CONSTANTS.DBOP_PLP, querynum);
                     if (null == dbopTasks || dbopTasks.size() == 0) {
                         CommonUtils.sleep(interval * 1000);
                     } else {
@@ -248,7 +247,7 @@ public class HafpisDbopPlpService extends AbstractService implements Runnable {
                     }
                 }
             }
-        }, "DBOP_LPP_DBOPTASKQUEUE_THREAD").start();
+        }, "DBOP_PLP_DBOPTASKQUEUE_THREAD").start();
 
         for (int i = 0; i < this.thread_num; i++) {
             new Thread(this::DBOP, "DBOP_PLP_THREAD").start();

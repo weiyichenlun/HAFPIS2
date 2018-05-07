@@ -71,7 +71,7 @@ public class HafpisFPTLService extends AbstractService implements Runnable {
         try {
             this.thread_num = Integer.parseInt(ConfigUtils.getConfigOrDefault("latfp_thread_num", "1"));
         } catch (NumberFormatException e) {
-            log.error("threadnum: {} config error, must be an Integer. Use default value: 1", cfg.getProperty("threadnum"));
+            log.error("threadnum: {} config error, must be an Integer. Use default value: 1", ConfigUtils.getConfig("latfp_thread_num"));
             this.thread_num = 1;
         }
 
@@ -122,6 +122,9 @@ public class HafpisFPTLService extends AbstractService implements Runnable {
                     taskSearch.setType("TL");
                     taskSearch.setScoreThreshold(FPTL_Threshold);
                     // calculate the average number of candidates on condition of avgcand = 1
+                    if (numOf1 == 0) {
+                        numOf1 = 1;
+                    }
                     int avgCandNum = numOfCand / numOf1;
                     if ((numOfCand % numOf1) > (avgCandNum / 2)) {
                         avgCandNum += 1;
@@ -172,7 +175,8 @@ public class HafpisFPTLService extends AbstractService implements Runnable {
                                         fptlCand.setTransno(srchTask.getTransno());
                                         fptlCand.setProbeid(srchTask.getProbeid());
                                         if (j < avgCandNum) {
-                                            fptlCandMap.put(candidate.getId(), fptlCand);
+                                            String key = candidate.getId() + String.valueOf(i + 1);
+                                            fptlCandMap.put(key, fptlCand);
                                         } else {
                                             rest.add(fptlCand);
                                         }
@@ -210,26 +214,18 @@ public class HafpisFPTLService extends AbstractService implements Runnable {
                                     for (int j = 0; j < candidates.size(); j++) {
                                         Candidate candidate = candidates.get(j);
                                         String candid = candidate.getId();
-                                        HafpisFptlCand fptlCand = fptlCandMap.get(candid);
-
-                                        if (fptlCand == null) {
-                                            fptlCand = new HafpisFptlCand();
-                                            fptlCand.getKeys().setTaskidd(taskidd);
-                                            fptlCand.getKeys().setCandid(candidate.getId());
-                                            fptlCand.getKeys().setPosition(i + 11);
-                                            fptlCand.setDbid((Integer) candidate.getFields().get("dbid"));
-                                            fptlCand.setScore(candidate.getScore());
-                                            fptlCand.setTransno(srchTask.getTransno());
-                                            fptlCand.setProbeid(srchTask.getProbeid());
-                                        } else {
-                                            if (candidate.getScore() > fptlCand.getScore()) {
-                                                fptlCand.setScore(candidate.getScore());
-                                                fptlCand.getKeys().setPosition(i + 11);
-                                            }
-                                        }
+                                        HafpisFptlCand fptlCand = new HafpisFptlCand();
+                                        fptlCand.getKeys().setTaskidd(taskidd);
+                                        fptlCand.getKeys().setCandid(candid);
+                                        fptlCand.getKeys().setPosition(i + 11);
+                                        fptlCand.setTransno(srchTask.getTransno());
+                                        fptlCand.setProbeid(srchTask.getProbeid());
+                                        fptlCand.setDbid((Integer) candidate.getFields().get("dbid"));
+                                        fptlCand.setScore(candidate.getScore());
 
                                         if (j < avgCandNum) {
-                                            fptlCandMap.put(candid, fptlCand);
+                                            String key = candid + String.valueOf(i + 11);
+                                            fptlCandMap.put(key, fptlCand);
                                         } else {
                                             rest.add(fptlCand);
                                         }
@@ -274,7 +270,9 @@ public class HafpisFPTLService extends AbstractService implements Runnable {
                                         fptlCand.setScore(candidate.getScore());
                                         fptlCand.setTransno(srchTask.getTransno());
                                         fptlCand.setProbeid(srchTask.getProbeid());
-                                        fptlCandMap.put(candidate.getId(), fptlCand);
+
+                                        String key = candidate.getId() + String.valueOf(i + 1);
+                                        fptlCandMap.put(key, fptlCand);
                                     }
                                     break;
                                 }
@@ -307,24 +305,17 @@ public class HafpisFPTLService extends AbstractService implements Runnable {
                                     for (int j = 0; j < candidates.size(); j++) {
                                         Candidate candidate = candidates.get(j);
                                         String candid = candidate.getId();
-                                        HafpisFptlCand fptlCand = fptlCandMap.get(candid);
+                                        HafpisFptlCand fptlCand = new HafpisFptlCand();
+                                        fptlCand.getKeys().setTaskidd(taskidd);
+                                        fptlCand.getKeys().setCandid(candid);
+                                        fptlCand.getKeys().setPosition(i + 11);
+                                        fptlCand.setTransno(srchTask.getTransno());
+                                        fptlCand.setProbeid(srchTask.getProbeid());
+                                        fptlCand.setDbid((Integer) candidate.getFields().get("dbid"));
+                                        fptlCand.setScore(candidate.getScore());
 
-                                        if (fptlCand == null) {
-                                            fptlCand = new HafpisFptlCand();
-                                            fptlCand.getKeys().setTaskidd(taskidd);
-                                            fptlCand.getKeys().setCandid(candidate.getId());
-                                            fptlCand.getKeys().setPosition(i + 11);
-                                            fptlCand.setDbid((Integer) candidate.getFields().get("dbid"));
-                                            fptlCand.setScore(candidate.getScore());
-                                            fptlCand.setTransno(srchTask.getTransno());
-                                            fptlCand.setProbeid(srchTask.getProbeid());
-                                        } else {
-                                            if (candidate.getScore() > fptlCand.getScore()) {
-                                                fptlCand.setScore(candidate.getScore());
-                                                fptlCand.getKeys().setPosition(i + 11);
-                                            }
-                                        }
-                                        fptlCandMap.put(candid, fptlCand);
+                                        String key = candid + String.valueOf(i + 11);
+                                        fptlCandMap.put(key, fptlCand);
                                     }
                                     break;
                                 }
@@ -384,12 +375,12 @@ public class HafpisFPTLService extends AbstractService implements Runnable {
     public void run() {
         //add shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            srchTaskDao.updateStatus(CONSTANTS.SRCH_DATATYPE_LPP, CONSTANTS.SRCH_TASKTYPE_TL);
+            srchTaskDao.updateStatus(CONSTANTS.SRCH_DATATYPE_TP, CONSTANTS.SRCH_TASKTYPE_TL);
             log.info("FPTL is shuting down");
         }));
 
         log.info("FPTL service start. Update status first...");
-        srchTaskDao.updateStatus(CONSTANTS.SRCH_DATATYPE_LPP, CONSTANTS.SRCH_TASKTYPE_TL);
+        srchTaskDao.updateStatus(CONSTANTS.SRCH_DATATYPE_TP, CONSTANTS.SRCH_TASKTYPE_TL);
 
         //Take SrchTask from db
         new Thread(() -> {

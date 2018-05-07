@@ -7,7 +7,7 @@ package hbie2.HAFPIS2.Entity;
  * 最后修改时间:2018/3/28
  */
 public class HafpisPmllCand extends AbstractBean<HafpisPmllCand>{
-    private OtherCompositeKeys keys;
+    private OtherCompositeKeys keys = new OtherCompositeKeys();
     private String transno;
     private String probeid;
     private Integer dbid;

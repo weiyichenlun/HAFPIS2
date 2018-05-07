@@ -352,7 +352,11 @@ public class CommonUtils {
                             tempMask[i] = '1';
                         }
                     }
-                    srchPosMask = String.valueOf(tempMask);
+                    if (String.valueOf(tempMask).equals("00000000000000000000")) { //avoid to be all 0
+                        srchPosMask = "11111111111111111111";
+                    } else {
+                        srchPosMask = String.valueOf(tempMask);
+                    }
                 } else {
                     String temp = srchPosMask.substring(0, 20);
                     if (temp.equals("00000000000000000000")) {
@@ -370,7 +374,11 @@ public class CommonUtils {
                             tempMask[CONSTANTS.srchOrder[i]] = '1';
                         }
                     }
-                    srchPosMask = String.valueOf(tempMask);
+                    if (String.valueOf(tempMask).equals("0000000000")) { //avoid to be all 0
+                        srchPosMask = "1000110001";
+                    }else {
+                        srchPosMask = String.valueOf(tempMask);
+                    }
                 } else {
                     srchPosMask = srchPosMask.substring(0, 10);
                     if (srchPosMask.equals("0000000000")) {
@@ -380,7 +388,7 @@ public class CommonUtils {
                 return srchPosMask;
             default:
                 log.error("Wrong srchposmask type");
-                return "00000000000000000000";
+                return "11111111111111111111";
         }
     }
 

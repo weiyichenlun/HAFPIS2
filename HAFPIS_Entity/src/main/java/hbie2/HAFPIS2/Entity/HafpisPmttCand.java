@@ -7,7 +7,7 @@ package hbie2.HAFPIS2.Entity;
  * 最后修改时间:2018/3/28
  */
 public class HafpisPmttCand extends AbstractBean<HafpisPmttCand> {
-    private TTCompositeKeys keys;
+    private TTCompositeKeys keys = new TTCompositeKeys();
     private String transno;
     private String probeid;
     private Integer dbid;
