@@ -33,11 +33,11 @@ import java.util.Properties;
 /**
  * 描述：
  * 作者：ZP
- * 创建时间:2018/3/15
- * 最后修改时间:2018/3/15
+ * 创建时间:2018/5/8
+ * 最后修改时间:2018/5/8
  */
-public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
-    private Logger log = LoggerFactory.getLogger(TenFpMasterDaoJDBC.class);
+public class LatPalmMasterDaoJDBC implements MasterDAO, Serializable {
+    private Logger log = LoggerFactory.getLogger(LatPalmMasterDaoJDBC.class);
     private String jdbc_driver;
     private String jdbc_url;
     private String jdbc_usr;
@@ -46,7 +46,10 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
     private MasterDAOMongoDB dao;
     private Connection conn = null;
     private QueryRunner queryRunner = null;
-
+    @Override
+    public int countRecord(Record.Status status, Date date, Date date1, String s) {
+        return 0;
+    }
 
     @Override
     public void init(Properties prop) {
@@ -99,116 +102,115 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
         }
     }
 
-
     @Nullable
     @Override
     public HbieConfig selectHbieConfig() {
-        return dao.selectHbieConfig();
+        return null;
     }
 
     @Override
     public void saveHbieConfig(HbieConfig hbieConfig) {
-        dao.saveHbieConfig(hbieConfig);
+
     }
 
     @NotNull
     @Override
-    public Date register(String address, String magic) {
-        return dao.register(address, magic);
+    public Date register(String s, String s1) {
+        return null;
     }
 
     @Nullable
     @Override
-    public Date ping(String address, String magic) {
-        return dao.ping(address, magic);
+    public Date ping(String s, String s1) {
+        return null;
     }
 
     @Nullable
     @Override
-    public DataCheckStatus fetchDataCheck(String magic) {
-        return dao.fetchDataCheck(magic);
+    public DataCheckStatus fetchDataCheck(String s) {
+        return null;
     }
 
     @Override
-    public void finishDataCheck(String magic) {
-        dao.finishDataCheck(magic);
+    public void finishDataCheck(String s) {
+
     }
 
     @Override
-    public void pendDataCheck(DataCheckStatus.Type type, Date skip, boolean force) {
-        dao.pendDataCheck(type, skip, force);
+    public void pendDataCheck(DataCheckStatus.Type type, Date date, boolean b) {
+
     }
 
     @NotNull
     @Override
     public List<MatcherInfo> getMatcherList() {
-        return dao.getMatcherList();
+        return null;
     }
 
     @NotNull
     @Override
     public List<MasterInfo> getMasterList() {
-        return dao.getMasterList();
+        return null;
     }
 
     @Override
-    public void disableMatcher(String address, String magic) {
-        dao.disableMatcher(address, magic);
+    public void disableMatcher(String s, String s1) {
+
     }
 
     @Override
-    public void disableMaster(String address, String magic) {
-        dao.disableMaster(address, magic);
+    public void disableMaster(String s, String s1) {
+
     }
 
     @Override
     public boolean saveRecord(Record record) {
-        return true;
+        return false;
     }
 
     @Override
-    public boolean deleteRecord(String id) {
-        return true;
+    public boolean deleteRecord(String s) {
+        return false;
     }
 
     @Nullable
     @Override
-    public Record selectRecord(String id) {
-        return dao.selectRecord(id);
+    public Record selectRecord(String s) {
+        return null;
     }
 
     @NotNull
     @Override
     public String submitVerify(TaskVerify taskVerify) {
-        return dao.submitVerify(taskVerify);
+        return null;
     }
 
     @Nullable
     @Override
-    public TaskVerify queryVerify(String id) {
-        return dao.queryVerify(id);
+    public TaskVerify queryVerify(String s) {
+        return null;
     }
 
     @Override
-    public boolean deleteVerify(String id) {
-        return dao.deleteVerify(id);
+    public boolean deleteVerify(String s) {
+        return false;
     }
 
     @NotNull
     @Override
     public String submitSearch(TaskSearch taskSearch) {
-        return dao.submitSearch(taskSearch);
+        return null;
     }
 
     @Nullable
     @Override
-    public TaskSearch querySearch(String id) {
-        return dao.querySearch(id);
+    public TaskSearch querySearch(String s) {
+        return null;
     }
 
     @Override
-    public boolean deleteSearch(String id) {
-        return dao.deleteSearch(id);
+    public boolean deleteSearch(String s) {
+        return false;
     }
 
     @Nullable
@@ -221,7 +223,7 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
                     "order by pid asc, createtime asc) where rownum <= 1";
             ps = conn.prepareStatement(sql);
             ps.setString(1, Record.Status.Trained.name());
-            ps.setInt(2, CONSTANTS.RECORD_DATATYPE_TP);
+            ps.setInt(2, CONSTANTS.RECORD_DATATYPE_PLP);
             ResultSet rs = ps.executeQuery();
             HafpisRecordStatus recordStatus = Utils.convert(rs);
 
@@ -235,7 +237,7 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
             ps.setString(1, Record.Status.Publishing.name());
             ps.setString(2, magic);
             ps.setString(3, id);
-            ps.setInt(4, CONSTANTS.RECORD_DATATYPE_TP);
+            ps.setInt(4, CONSTANTS.RECORD_DATATYPE_PLP);
             ps.setString(5, Record.Status.Trained.name());
             ps.executeUpdate();
             log.debug("fetch record to publish {}", id);
@@ -267,7 +269,7 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
     public void finishRecord(String id) {
         String sql = "update HAFPIS_RECORD_STATUS set status=? where pid=? and datatype=? and status=?";
         try {
-            this.queryRunner.update(sql, Record.Status.Done.name(), id, CONSTANTS.RECORD_DATATYPE_TP,
+            this.queryRunner.update(sql, Record.Status.Done.name(), id, CONSTANTS.RECORD_DATATYPE_PLP,
                     Record.Status.Publishing.name());
             log.debug("finish record {}", id);
         } catch (SQLException e) {
@@ -285,7 +287,7 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
             ps.setString(1, Record.Status.Pending.name());
             ps.setString(2, null);
             ps.setString(3, Record.Status.Processing.name());
-            ps.setInt(4, CONSTANTS.RECORD_DATATYPE_TP);
+            ps.setInt(4, CONSTANTS.RECORD_DATATYPE_PLP);
             ps.setString(5, magic);
             ps.executeUpdate();
 
@@ -294,7 +296,7 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
             ps.setString(1, Record.Status.Processed.name());
             ps.setString(2, null);
             ps.setString(3, Record.Status.Training.name());
-            ps.setInt(4, CONSTANTS.RECORD_DATATYPE_TP);
+            ps.setInt(4, CONSTANTS.RECORD_DATATYPE_PLP);
             ps.setString(5, magic);
             ps.executeUpdate();
 
@@ -324,7 +326,7 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
         String publicshSql = "update HAFPIS_RECORD_STATUS set status=?, magic=? where status=? and datatype=? and magic=?";
         try {
             this.queryRunner.update(publicshSql, Record.Status.Trained.name(), null, Record.Status.Publishing.name(),
-                    CONSTANTS.RECORD_DATATYPE_TP, magic);
+                    CONSTANTS.RECORD_DATATYPE_PLP, magic);
         } catch (SQLException e) {
             log.error("reset record publishing error. magic {}", magic, e);
         }
@@ -332,57 +334,47 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
 
     @Nullable
     @Override
-    public TaskSearch fetchSearchToFuse(String magic) {
-        return dao.fetchSearchToFuse(magic);
+    public TaskSearch fetchSearchToFuse(String s) {
+        return null;
     }
 
     @Override
     public void finishSearch(TaskSearch taskSearch) {
-        dao.finishSearch(taskSearch);
+
     }
 
     @Override
-    public void resetSearchFusing(String magic) {
-        dao.resetSearchFusing(magic);
+    public void resetSearchFusing(String s) {
+
     }
 
     @Override
-    public void resetSearchProcessing(String magic) {
-        dao.resetSearchProcessing(magic);
+    public void resetSearchProcessing(String s) {
+
     }
 
     @Override
-    public void resetSearchSearching(String magic, int shardIdx, int shardNum) {
-        dao.resetSearchSearching(magic, shardIdx, shardNum);
+    public void resetSearchSearching(String s, int i, int i1) {
+
     }
 
     @Override
-    public void resetDataChecking(String magic) {
-        dao.resetDataChecking(magic);
+    public void resetDataChecking(String s) {
+
     }
 
     @Override
     public void listId(Function2<? super String, ? super Date, Boolean> block) {
         StringBuilder sb = new StringBuilder();
         List<Object[]> res;
-        sb.append("select personid, enrolldate, imgmask from ").append(this.jdbc_table).append(" order by personid asc, " +
+        sb.append("select latentid, enrolldate from ").append(this.jdbc_table).append(" order by latentid asc, " +
                 "enrolldate asc");
         try {
             res = this.queryRunner.query(sb.toString(), new ArrayListHandler());
             res.forEach(objects -> {
                 String pid = (String) objects[0];
-                String pid$ = objects[0] + "$";
                 Date date = Utils.getDateFromStr((String) objects[1]);
-                String imgMask = (String) objects[2]; //imgmask 长度有两种情况 43和70 不过对指掌纹没有影响
-                if (imgMask != null) {
-                    if (imgMask.length() >= 10 && !imgMask.substring(0, 10).equals("0000000000")) {
-                        if (!block.invoke(pid, date)) return;
-                    } else if (imgMask.length() >= 20 && !imgMask.substring(10, 20).equals("0000000000")) {
-                        if (!block.invoke(pid$, date)) return;
-                    }
-                } else {
-                    log.warn("Personid: {} imgmask is null", pid);
-                }
+                if(!block.invoke(pid, date)) return;
             });
         } catch (SQLException e) {
             log.error("Select id/enrolldate error. ", e);
@@ -391,58 +383,53 @@ public class TenFpMasterDaoJDBC implements MasterDAO, Serializable {
     }
 
     @Override
-    public void listAll(Date skip, Function1<? super Record, Boolean> block) {
-        dao.listAll(skip, block);
-    }
+    public void listAll(Date date, Function1<? super Record, Boolean> function1) {
 
-    @Override
-    public int countRecord(Record.Status status, Date date, Date date1, String s) {
-        return this.dao.countRecord(status, date, date1, s);
     }
 
     @NotNull
     @Override
     public List<Record> listRecord(Record.Status status, Date date, Date date1, String s, int i, boolean b, String s1) {
-        return this.dao.listRecord(status, date, date1, s, i, b, s1);
+        return null;
     }
 
     @Nullable
     @Override
     public Record selectRecordImages(String s) {
-        return this.dao.selectRecordImages(s);
+        return null;
     }
 
     @NotNull
     @Override
     public List<TaskVerify> listVerify(TaskVerify.Status status, Date date, Date date1, int i, boolean b, String s) {
-        return this.dao.listVerify(status, date, date1, i, b, s);
+        return null;
     }
 
     @Override
     public int countVerify(TaskVerify.Status status, Date date, Date date1) {
-        return this.dao.countVerify(status, date, date1);
+        return 0;
     }
 
     @Nullable
     @Override
     public TaskVerify selectVerifyImages(String s) {
-        return this.dao.selectVerifyImages(s);
+        return null;
     }
 
     @NotNull
     @Override
     public List<TaskSearch> listSearch(TaskSearch.Status status, Date date, Date date1, int i, boolean b, String s) {
-        return this.dao.listSearch(status, date, date1, i, b, s);
+        return null;
     }
 
     @Override
     public int countSearch(TaskSearch.Status status, Date date, Date date1) {
-        return this.dao.countSearch(status, date, date1);
+        return 0;
     }
 
     @Nullable
     @Override
     public TaskSearch selectSearchImages(String s) {
-        return this.dao.selectSearchImages(s);
+        return null;
     }
 }

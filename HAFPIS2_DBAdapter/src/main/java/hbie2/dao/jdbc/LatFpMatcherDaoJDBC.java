@@ -249,7 +249,6 @@ public class LatFpMatcherDaoJDBC implements MatcherDAO{
 
     @NotNull
     @Override
-    //TODO 使用临时表加快查询速度
     public List<Record> selectRecords(Collection<String> ids) {
         InfoCol[] info_cols = dao.cfg.getInfoCols();
         List<Record> res = new ArrayList<>();

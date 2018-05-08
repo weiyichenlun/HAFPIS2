@@ -200,7 +200,7 @@ public class HafpisPMTTService extends AbstractService implements Runnable {
 
     @Override
     public void run() {
-//add shutdown hook
+        //add shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             srchTaskDao.updateStatus(CONSTANTS.SRCH_DATATYPE_PP, CONSTANTS.SRCH_TASKTYPE_TT);
         }));

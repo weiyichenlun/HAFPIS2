@@ -34,17 +34,16 @@ import java.util.Properties;
 /**
  * 描述：
  * 作者：ZP
- * 创建时间:2018/3/15
- * 最后修改时间:2018/3/15
+ * 创建时间:2018/5/8
+ * 最后修改时间:2018/5/8
  */
-public class TenFpMatcherDaoJDBC implements MatcherDAO{
-    private Logger log = LoggerFactory.getLogger(TenFpMatcherDaoJDBC.class);
+public class LatPalmMatcherDaoJDBC implements MatcherDAO {
+    private Logger log = LoggerFactory.getLogger(LatPalmMatcherDaoJDBC.class);
     private String jdbc_driver;
     private String jdbc_url;
     private String jdbc_usr;
     private String jdbc_pwd;
     private String jdbc_table;
-    private String task_table;
     private int ftp_enable;
     private String ftp_host;
     private int ftp_port;
@@ -53,13 +52,81 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
     private MatcherDAOMongoDB dao;
     private Connection conn = null;
     private QueryRunner queryRunner = null;
-    private static final String[] RPTABLES = {"HAFPIS_RPMNT_01", "HAFPIS_RPMNT_02",
-            "HAFPIS_RPMNT_03", "HAFPIS_RPMNT_04", "HAFPIS_RPMNT_05", "HAFPIS_RPMNT_06",
-            "HAFPIS_RPMNT_07", "HAFPIS_RPMNT_08", "HAFPIS_RPMNT_09", "HAFPIS_RPMNT_10"};
-    private static final String[] FPTABLES = {"HAFPIS_FPMNT_01", "HAFPIS_FPMNT_02",
-            "HAFPIS_FPMNT_03", "HAFPIS_FPMNT_04", "HAFPIS_FPMNT_05", "HAFPIS_FPMNT_06",
-            "HAFPIS_FPMNT_07", "HAFPIS_FPMNT_08", "HAFPIS_FPMNT_09", "HAFPIS_FPMNT_10"};
+    private static final String PLPTABLE = "HAFPIS_PLMNT";
+    @Nullable
+    @Override
+    public Record fetchRecordToProcess(String magic) {
+        while (true) {
+            PreparedStatement ps = null;
+            try (Connection conn = this.queryRunner.getDataSource().getConnection()) {
+                conn.setAutoCommit(false);
+                String sql = "select * from (select * from HAFPIS_RECORD_STATUS where status=? and datatype=? order by " +
+                        "createtime asc) where rownum<=1";
+                ps = conn.prepareStatement(sql);
+                ps.setString(1, Record.Status.Pending.name());
+                ps.setInt(2, CONSTANTS.RECORD_DATATYPE_PLP);
+                ResultSet rs = ps.executeQuery();
+                HafpisRecordStatus recordStatus = Utils.convert(rs);
 
+                if (recordStatus == null) {
+                    CommonUtils.sleep(100);
+                } else {
+                    String updateSql = "update HAFPIS_RECORD_STATUS set status=?, magic=? where PID=? and datatype=?";
+                    String probeid = recordStatus.getKey().getProbeid();
+                    ps = conn.prepareStatement(updateSql);
+                    ps.setString(1, Record.Status.Processing.name());
+                    ps.setString(2, magic);
+                    ps.setString(3, probeid);
+                    ps.setInt(4, CONSTANTS.RECORD_DATATYPE_PLP);
+                    ps.executeUpdate();
+                    conn.commit();
+
+                    Record record = new Record();
+                    record.setId(probeid);
+                    record.setCreateTime(Utils.getDateFromStr(recordStatus.getCreatetime()));
+                    String path = recordStatus.getNistpath();
+                    String filepath = null;
+                    if (path.startsWith("/")) {
+                        filepath = path + "/";
+                    } else {
+                        filepath = "./";
+                    }
+                    log.debug("filepath is ", filepath);
+                    log.debug("Path: {} filename: {}", path, probeid);
+                    Map<Integer, List<NistImg>> nistImgMap = Utils.initFtpAndLoadNistByURL(this.ftp_host, this.ftp_port,
+                            this.ftp_usr, this.ftp_pwd, filepath + probeid + ".nist");
+
+                    List<NistImg> latpalm_list = nistImgMap.get(13); //TODO type 13: latpalm
+                    if (latpalm_list == null || latpalm_list.size() == 0) {
+                        log.warn("probeid {}: no roll palm image in nist file", probeid);
+                        return null;
+                    } else {
+                        byte[] img = latpalm_list.get(0).imgData;
+                        record.setImage(img);
+                        return record;
+                    }
+                }
+            } catch (SQLException e) {
+                log.error("fetch record to process error. magic {}", magic, e);
+                try {
+                    conn.rollback();
+                } catch (SQLException e1) {
+                }
+                return null;
+            } finally {
+                try {
+                    conn.setAutoCommit(true);
+                } catch (SQLException e) {
+                }
+                if (ps != null) {
+                    try {
+                        ps.close();
+                    } catch (SQLException e) {
+                    }
+                }
+            }
+        }
+    }
 
     @Override
     public void init(Properties prop) {
@@ -90,6 +157,7 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
                                 log.error("driver class: {} not found: ",this.jdbc_driver);
                                 System.exit(-1);
                             }
+
                             dataSource = new BasicDataSource();
                             dataSource.setDriverClassName(this.jdbc_driver);
                             dataSource.setUrl(this.jdbc_url);
@@ -104,23 +172,18 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
                                 log.error("connect to db error. ", e);
                                 System.exit(-1);
                             }
-//
-//                            this.task_table = prop.getProperty("matcher_task_table");
-//                            if (this.task_table == null) {
-//                                log.error("no matcher_task_table config");
-//                                System.exit(-1);
-//                            }
+
                             String ftp_enable_str = prop.getProperty("ftp_enable");
                             if (null == ftp_enable_str) {
                                 log.warn("Ftp_enable is not config.");
-                                log.warn("Use default value: 0");
-                                ftp_enable = 0;
+                                log.warn("Use default value: 1");
+                                ftp_enable = 1;
                             } else {
                                 try {
                                     ftp_enable = Integer.parseInt(ftp_enable_str);
                                 } catch (NumberFormatException e) {
                                     log.error("Ftp_enable config error. ");
-                                    ftp_enable = 0;
+                                    ftp_enable = 1;
                                 }
                             }
 
@@ -152,112 +215,7 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
                                     }
                                 }
                             }
-
                         }
-                    }
-                }
-            }
-        }
-
-    }
-
-
-    @Nullable
-    @Override
-    public Record fetchRecordToProcess(String magic) {
-        while (true) {
-            //find pending record from HAFPIS_RECORD_STATUS
-            PreparedStatement ps = null;
-            try (Connection conn = this.queryRunner.getDataSource().getConnection()) {
-                conn.setAutoCommit(false);
-                String sql = "select * from (select * from HAFPIS_RECORD_STATUS where status=? and datatype=? order by " +
-                        "createtime asc) where rownum<=1";
-                ps = conn.prepareStatement(sql);
-                ps.setString(1, Record.Status.Pending.name());
-                ps.setInt(2, CONSTANTS.RECORD_DATATYPE_TP);
-                ResultSet rs = ps.executeQuery();
-                HafpisRecordStatus recordStatus = Utils.convert(rs);
-
-                if (recordStatus == null) {
-                    CommonUtils.sleep(100);
-                } else {
-                    String updateSql = "update HAFPIS_RECORD_STATUS set status=?, magic=? where PID=? and datatype=?";
-                    String probeid = recordStatus.getKey().getProbeid();
-                    boolean is_fp = probeid.endsWith("$");
-                    ps = conn.prepareStatement(updateSql);
-                    ps.setString(1, Record.Status.Processing.name());
-                    ps.setString(2, magic);
-                    ps.setString(3, probeid);
-                    ps.setInt(4, CONSTANTS.RECORD_DATATYPE_TP);
-                    ps.executeUpdate();
-                    conn.commit();
-
-                    Record record = new Record();
-                    record.setId(probeid);
-                    record.setCreateTime(Utils.getDateFromStr(recordStatus.getCreatetime()));
-                    String path = recordStatus.getNistpath();
-                    String filepath = null;
-                    if (path.startsWith("/")) {
-                        filepath = path + "/";
-                    } else {
-                        filepath = "./";
-                    }
-                    log.debug("filepath is {}", filepath);
-                    String filename = is_fp ? probeid.substring(0, probeid.length() - 1) : probeid;
-                    log.debug("Path: {} filename: {}", path, filename);
-//                    Map<Integer, List<NistImg>> nistImgMap = Utils.initFtpAndLoadNist(this.ftp_host, this.ftp_port,
-//                            this.ftp_usr, this.ftp_pwd, path, filename);
-                    Map<Integer, List<NistImg>> nistImgMap = Utils.initFtpAndLoadNistByURL(this.ftp_host, this.ftp_port,
-                            this.ftp_usr, this.ftp_pwd, filepath + filename + ".nist");
-                    if (is_fp) {
-                        List<NistImg> fp_list = nistImgMap.get(16); //type 16: flat image
-                        if (fp_list == null || fp_list.size() == 0) {
-                            //TODO alse need to concern the four-fingers in type 14 list
-                            log.warn("probeid {}: no flat finger image in nist file", probeid);
-                            return null;
-                        } else {
-                            byte[][] imgs = new byte[10][];
-                            fp_list.forEach(nistImg -> {
-                                //start from index 21
-                                imgs[nistImg.idc - 21] = nistImg.imgData;
-                            });
-                            record.setImages(imgs);
-                            return record;
-                        }
-                    } else {
-                        List<NistImg> rp_list = nistImgMap.get(14); //type 14: roll image
-                        if (rp_list == null || rp_list.size() == 0) {
-                            log.warn("probeid {}: no roll finger image in nist file", probeid);
-                            return null;
-                        } else {
-                            byte[][] imgs = new byte[10][];
-                            rp_list.forEach(nistImg -> {
-                                if (nistImg.idc >= 1 && nistImg.idc <= 10) {
-                                    imgs[nistImg.idc - 1] = nistImg.imgData;
-                                }
-                            });
-                            record.setImages(imgs);
-                            return record;
-                        }
-                    }
-                }
-            } catch (SQLException e) {
-                log.error("fetch record to process error. magic {}", magic, e);
-                try {
-                    conn.rollback();
-                } catch (SQLException e1) {
-                    log.error("rollback error. ",e);
-                }
-                return null;
-            } finally {
-                try {
-                    conn.setAutoCommit(true);
-                } catch (SQLException e) {
-                }
-                if (ps != null) {
-                    try {
-                        ps.close();
-                    } catch (SQLException e) {
                     }
                 }
             }
@@ -267,18 +225,19 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
     @Nullable
     @Override
     public HbieConfig selectHbieConfig() {
-        return dao.selectHbieConfig();
+        return null;
     }
 
     @NotNull
     @Override
     public Date register(String s, String s1, int i, int i1) {
-        return dao.register(s, s1, i, i1);
+        return null;
     }
 
+    @Nullable
     @Override
     public Date ping(String s, String s1) {
-        return dao.ping(s, s1);
+        return null;
     }
 
     @NotNull
@@ -288,85 +247,54 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
         List<Record> res = new ArrayList<>();
         ids.forEach(id -> {
             Record rec = new Record();
-            String pid = id;
-            boolean change = false;
-            if (id.endsWith("$")) {
-                pid = id.substring(0, id.length() - 1);
-                change = true;
-            }
             rec.setId(id);
             rec.getFields().put("id", id);
-            rec.getFields().put("flag", change ? (byte) 1 : (byte) 0);
             StringBuilder sb = new StringBuilder("select enrolldate");
-            //info_cols[0]: id:String, info_cols[1]: flag:byte
-            for (int i = 2; i < info_cols.length; i++) {
+            //info_cols[0]: id:String
+            for (int i = 1; i < info_cols.length; i++) {
                 sb.append(", ").append(info_cols[i].getName());
             }
-
-            sb.append(" from ").append(this.jdbc_table).append(" where personid=?");
+            sb.append(" from ").append(this.jdbc_table).append(" where latentid=?");
             try {
-                Map<String, Object> map = this.queryRunner.query(sb.toString(), new MapHandler(), pid);
+                Map<String, Object> map = this.queryRunner.query(sb.toString(), new MapHandler(), id);
                 rec.setCreateTime(Utils.getDateFromStr((String) map.get("ENROLLDATE")));
-                for (int i = 2; i < info_cols.length; i++) {
+                for (int i = 1; i < info_cols.length; i++) {
                     String temp = info_cols[i].getName();
                     rec.getFields().put(temp, (Serializable) map.get(temp));
                 }
             } catch (SQLException e) {
-                log.error("select error. perosnid: {}/table: {}", id, this.jdbc_table, e);
+                log.error("select error. latentid: {}/table: {}", id, this.jdbc_table, e);
             }
-            byte[][] features = new byte[10][];
-            for (int i = 0; i < 10; i++) {
-                StringBuilder fea_sql = new StringBuilder();
-                fea_sql.append("select mntdata from ");
-                fea_sql.append(change ? FPTABLES[i] : RPTABLES[i]);
-                fea_sql.append(" where personid=?");
-                try {
-                    int finalI = i;
-                    this.queryRunner.query(fea_sql.toString(), rs -> {
-                        if (rs.next()) {
-                            byte[] fea = rs.getBytes("MNTDATA");
-                            if (fea != null && fea.length > 0) {
-                                features[finalI] = new byte[6144];
-                                System.arraycopy(fea, 0, features[finalI], 0, 3072);
-                                System.arraycopy(fea, 0, features[finalI], 3072, 3072);
-                            } else {
-                                log.debug("id: {}, index: {}", id, finalI);
-                            }
+            String fea_sql = "select mntdata from " + PLPTABLE + " where latentid = ?";
+            try {
+                this.queryRunner.query(fea_sql, rs -> {
+                    if (rs.next()) {
+                        byte[] fea = rs.getBytes("MNTDATA");
+                        if (fea == null) {
+                            log.warn("Get null feature for latentid: {}", id);
+                        } else{
+                            rec.setFeature(fea);
+                            res.add(rec);
                         }
-                        return null;
-                    }, pid);
-                } catch (SQLException e) {
-                    log.error("select error. perosnid: {}/feature: {} ", id, (i + 1), e);
-                }
-            }
-            if (checkNull(features)) {
-                log.warn("get null features for personid: {}", id);
-            } else {
-                rec.setFeatures(features);
-                res.add(rec);
+                    }
+                    return null;
+                }, id);
+            } catch (SQLException e) {
+                log.error("select error. latentid: {}", id, e);
             }
         });
         return res;
     }
 
-    private boolean checkNull(byte[][] bytes) {
-        int cnt = 0;
-        if (bytes == null) return true;
-        for (byte[] aByte : bytes) {
-            if (aByte == null || aByte.length == 0) cnt++;
-        }
-        return cnt == 10;
-    }
-
     @Nullable
     @Override
     public TaskVerify fetchVerifyToProcess(String s) {
-        return dao.fetchVerifyToProcess(s);
+        return null;
     }
 
     @Override
     public void finishVerify(TaskVerify taskVerify) {
-        dao.finishVerify(taskVerify);
+
     }
 
     @Nullable
@@ -376,48 +304,41 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
         try (Connection conn = this.queryRunner.getDataSource().getConnection()) {
             conn.setAutoCommit(false);
             String sql = "select * from (select * from HAFPIS_RECORD_STATUS where status=? and datatype=? order by " +
-                    "create_time) where rownum <= 1";
+                    "createtime) where rownum <= 1";
             ps = conn.prepareStatement(sql);
             ps.setString(1, Record.Status.Processed.name());
-            ps.setInt(2, CONSTANTS.RECORD_DATATYPE_TP);
+            ps.setInt(2, CONSTANTS.RECORD_DATATYPE_PLP);
             ResultSet rs = ps.executeQuery();
             HafpisRecordStatus recordStatus = Utils.convert(rs);
 
             if (recordStatus == null) {
-                return null;
+                CommonUtils.sleep(100);
             } else {
-                String updateSql = "update HAFPIS_RECORD_STATUS set status=?, magic=? where PID=? and datatype=?";
-                String pid = recordStatus.getKey().getProbeid();
+                String updateSql = "update HAFPIS.HAFPIS_RECORD_STATUS set status=?, magic=? where PID=? and datatype=?";
+                String probeid = recordStatus.getKey().getProbeid();
                 ps = conn.prepareStatement(updateSql);
                 ps.setString(1, Record.Status.Training.name());
                 ps.setString(2, magic);
-                ps.setString(3, pid);
-                ps.setInt(4, CONSTANTS.RECORD_DATATYPE_TP);
+                ps.setString(3, probeid);
+                ps.setInt(4, CONSTANTS.RECORD_DATATYPE_PLP);
                 ps.executeUpdate();
 
-                boolean is_fp = pid.endsWith("$");
-                Record record = new Record();
-                record.setId(pid);
-                byte[][] features = new byte[10][];
-                String name = is_fp ? pid.substring(0, pid.length() - 1) : pid;
-                for (int i = 0; i < 10; i++) {
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("select mntdata from ");
-                    sb.append(is_fp ? FPTABLES[i] : RPTABLES[i]);
-                    sb.append(" where personid=?");
-                    ps = conn.prepareStatement(sb.toString());
-                    ps.setString(1, name);
-                    rs = ps.executeQuery();
-                    if (rs.next()) {
-                        features[i] = rs.getBytes("mntdata");
-                    }
+                String mntSql = "select mntdata from " + PLPTABLE + " where latentid=?";
+                ps = conn.prepareStatement(mntSql);
+                ps.setString(1, probeid);
+                rs = ps.executeQuery();
+                byte[] feature = new byte[0];
+                if (rs.next()) {
+                    feature = rs.getBytes("mntdata");
                 }
-
                 conn.commit();
-                record.setFeatures(features);
+                Record record = new Record();
+                record.setId(probeid);
+                record.setFeature(feature);
                 record.setCreateTime(Utils.getDateFromStr(recordStatus.getCreatetime()));
                 return record;
             }
+            return null;
         } catch (SQLException e) {
             log.error("select record to train error.", e);
             try {
@@ -429,7 +350,6 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
             try {
                 conn.setAutoCommit(true);
             } catch (SQLException e) {
-
             }
             if (ps != null) {
                 try {
@@ -446,8 +366,7 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
                 record.getStatus().compareTo(Record.Status.Trained) == 0) {
             PreparedStatement ps = null;
             String pid = record.getId();
-            boolean is_fp = pid.endsWith("$");
-            byte[][] features = record.getFeatures();
+            byte[] feature = record.getFeature();
             try (Connection conn = this.queryRunner.getDataSource().getConnection()){
                 conn.setAutoCommit(false);
                 // update matcher_task
@@ -455,25 +374,21 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
                 ps = conn.prepareStatement(sql);
                 ps.setString(1, record.getStatus().name());
                 ps.setString(2, pid);
-                ps.setInt(3, CONSTANTS.RECORD_DATATYPE_TP);
+                ps.setInt(3, CONSTANTS.RECORD_DATATYPE_PLP);
                 ps.setString(4, Record.Status.Processing.name());
                 ps.executeUpdate();
 
                 //update mnt table
-                if (is_fp) {
-                    pid = pid.substring(0, pid.length() - 1);
-                }
-                for (int i = 0; i < features.length; i++) {
-                    String updateSql = "update " + (is_fp ? FPTABLES[i] : RPTABLES[i]) + " set mntdata=? where personid=?";
-                    ps = conn.prepareStatement(updateSql);
-                    ps.setBytes(1, features[i]);
-                    ps.setString(2, pid);
-                    ps.executeUpdate();
-                    log.debug("updateSql is {}", updateSql);
-                }
+                String updateSql = "update " + PLPTABLE + " set mntdata=? where latentid=?";
+                ps = conn.prepareStatement(updateSql);
+                ps.setBytes(1, feature);
+                ps.setString(2, pid);
+                ps.executeUpdate();
+                log.debug("updateSql is {}", updateSql);
+
                 conn.commit();
             } catch (SQLException e) {
-                log.error("Update HAFPIS_RECORD_STATUS and related MNT table error. {}/{}", pid, is_fp, e);
+                log.error("Update HAFPIS_RECORD_STATUS and related MNT table error. latentid: {}", pid);
                 try {
                     conn.rollback();
                 } catch (SQLException e1) {
@@ -499,8 +414,7 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
     public void finishRecordTrained(Record record) {
         PreparedStatement ps = null;
         String pid = record.getId();
-        boolean is_fp = pid.endsWith("$");
-        byte[][] features = record.getFeatures();
+        byte[] feature = record.getFeature();
         try (Connection conn = this.queryRunner.getDataSource().getConnection()) {
             conn.setAutoCommit(false);
 
@@ -509,25 +423,20 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
             ps = conn.prepareStatement(sql);
             ps.setString(1, Record.Status.Trained.name());
             ps.setString(2, pid);
-            ps.setInt(3, CONSTANTS.RECORD_DATATYPE_TP);
+            ps.setInt(3, CONSTANTS.RECORD_DATATYPE_PLP);
             ps.setString(4, Record.Status.Training.name());
             ps.executeUpdate();
 
-            if (is_fp) {
-                pid = pid.substring(0, pid.length() - 1);
-            }
-            for (int i = 0; i < features.length; i++) {
-                String updateSql = "update " + (is_fp ? FPTABLES[i] : RPTABLES[i]) + " set mntdata=? where personid=?";
-                ps = conn.prepareStatement(updateSql);
-                ps.setBytes(1, features[i]);
-                ps.setString(2, pid);
-                ps.executeUpdate();
-                log.debug("updateSql is {}", updateSql);
-            }
+            String updateSql = "update " + PLPTABLE + " set mntdata=? where latentid=?";
+            ps = conn.prepareStatement(updateSql);
+            ps.setBytes(1, feature);
+            ps.setString(2, pid);
+            ps.executeUpdate();
+            log.debug("updateSql is {}", updateSql);
 
             conn.commit();
         } catch (SQLException e) {
-            log.error("Update HAFPIS_RECORD_STATUS and related MNT table error. {}/{}", pid, is_fp, e);
+            log.error("Update HAFPIS_RECORD_STATUS and related MNT table error. latentid: {}", pid);
             try {
                 conn.rollback();
             } catch (SQLException e1) {
@@ -549,46 +458,43 @@ public class TenFpMatcherDaoJDBC implements MatcherDAO{
     @Nullable
     @Override
     public TaskSearch fetchSearchToProcess(String s) {
-
-        return dao.fetchSearchToProcess(s);
+        return null;
     }
 
     @Override
     public void prepareSearchToSearch(TaskSearch taskSearch, int i) {
-        dao.prepareSearchToSearch(taskSearch, i);
+
     }
 
     @Nullable
     @Override
     public TaskSearch fetchSearchToSearch(String s, int i, int i1) {
-        return dao.fetchSearchToSearch(s, i, i1);
+        return null;
     }
 
     @Override
     public boolean finishSearch(TaskSearch taskSearch, String s, int i, int i1) {
-        return dao.finishSearch(taskSearch, s, i, i1);
+        return false;
     }
 
     @Override
     public void setRecordError(String s, Date date, String s1) {
-        dao.setRecordError(s, date, s1);
+
     }
 
     @Override
     public void setVerifyError(String s, String s1) {
-        dao.setVerifyError(s, s1);
+
     }
 
     @Override
     public void setSearchError(String s, String s1) {
-        dao.setSearchError(s, s1);
+
     }
 
     @Nullable
     @Override
     public byte[] getRecordImage(String s, int i) {
-        return dao.getRecordImage(s, i);
+        return new byte[0];
     }
-
-
 }

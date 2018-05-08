@@ -82,6 +82,7 @@ public class CONSTANTS {
     public static final int[] srchOrder = new int[]{0, 4, 5, 9};
     public static final int[] feaOrder = new int[]{0, 2, 1, 3};
     public static final int[] oriOrder = new int[]{0, 4, 5, 9};
+    public static final int[] ppNistOrder = new int[]{0, 0, 0, 0, 2, 1, 0, 0, 0, 3};
 
 
 
